@@ -24,29 +24,29 @@ class VetNavbar
       route: '/menu_veterinario',
     ),
     _NavItem(
-      icon: Icons.pets,
-      label: 'Mascotas',
-      route: '/mis_mascotas',
+      icon: Icons.person_add_sharp,
+      label: 'Pacientes',
+      route: '/lista_pacientes',
     ),
     _NavItem(
-      icon: Icons.medical_services,
-      label: 'Historial',
-      route: '/ficha_paciente',
+      icon: Icons.dashboard,
+      label: 'Dashboard',
+      route: '/dashboard',
     ),
     _NavItem(
       icon: Icons.calendar_month,
       label: 'Citas',
-      route: '/agenda_citas',
+      route: '/agenda_citas_veterinario',
     ),
-    _NavItem(
-      icon: Icons.chat_bubble,
-      label: 'Chatbot',
-      route: '/chat',
-    ),
+    /*_NavItem(
+      icon: Icons.notifications_active,
+      label: 'Recordatorio',
+      route: '',
+    ),*/
     _NavItem(
       icon: Icons.person,
       label: 'Perfil',
-      route: '/perfil_usuario',
+      route: '/perfil_veterinarios',
     ),
   ];
 

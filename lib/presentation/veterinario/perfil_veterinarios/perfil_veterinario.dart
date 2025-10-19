@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:vet_smart_ids/core/app_colors.dart';
-import 'package:vet_smart_ids/presentation/usuario/navbar/navbar_usuario.dart';
+import 'package:vet_smart_ids/presentation/veterinario/navbar/navbar_veterinario.dart';
 
 // Pantalla principal para editar el perfil del usuario.
 // Es StatefulWidget para gestionar los TextEditingController.
-class PerfilUsuarioScreen
+class PerfilVeterinarioScreen
     extends
         StatefulWidget {
-  static const String name = 'perfil_usuario_screen';
+  static const String name = 'perfil_veterinario_screen';
 
-  const PerfilUsuarioScreen({
+  const PerfilVeterinarioScreen({
     super.key,
   });
 
   @override
   State<
-    PerfilUsuarioScreen
+    PerfilVeterinarioScreen
   >
   createState() => _PerfilUsuarioScreenState();
 }
@@ -24,7 +24,7 @@ class PerfilUsuarioScreen
 class _PerfilUsuarioScreenState
     extends
         State<
-          PerfilUsuarioScreen
+          PerfilVeterinarioScreen
         > {
   // Controladores para la gestión de texto de los campos de entrada
   late final TextEditingController _nameController;
@@ -73,7 +73,7 @@ class _PerfilUsuarioScreenState
           onPressed: () => context.pop(),
         ),
         title: const Text(
-          'Perfil de Usuario',
+          'Perfil de Veterinario',
         ),
         centerTitle: true,
       ),
@@ -213,9 +213,9 @@ class _PerfilUsuarioScreenState
         ),
       ],
       // navbar
-      bottomNavigationBar: const UserNavbar(
+      bottomNavigationBar: const VetNavbar(
         // Le pasamos la ruta estática para que el navbar resalte el ícono "Inicio".
-        currentRoute: '/perfil_usuarios',
+        currentRoute: '/perfil_veterinarios',
       ),
     );
   }

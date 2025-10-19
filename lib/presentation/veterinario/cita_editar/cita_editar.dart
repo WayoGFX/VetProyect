@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:vet_smart_ids/core/app_colors.dart';
+import 'package:vet_smart_ids/presentation/veterinario/navbar/navbar_veterinario.dart';
 
 class GestureEditar
     extends
@@ -10,7 +11,7 @@ class GestureEditar
   }) : super(
          key: key,
        );
-  static const String name = "gesture_editar"; // Ruta de navegación
+  static const String name = "gesture_editar";
 
   @override
   State<
@@ -44,6 +45,7 @@ class _EditarCitaPageState
     String
   >
   vets = [
+    "Dra. Andy Torres",
     "Dr. Carlos Rodriguez",
     "Dra. Ana Martinez",
     "Dr. Juan Perez",
@@ -197,12 +199,11 @@ class _EditarCitaPageState
                   const SizedBox(
                     height: 16,
                   ),
-                  _buildTextArea(
+                  _buildInputField(
                     context,
                     controller: reasonController,
                     label: "Motivo de la consulta",
                     icon: Icons.medical_services,
-                    rows: 2,
                   ),
                   const SizedBox(
                     height: 16,
@@ -277,61 +278,8 @@ class _EditarCitaPageState
         ),
       ),
       // Componente de navegación inferior
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: isDark
-            ? AppColors.textLight
-            : AppColors.backgroundLight,
-        currentIndex: currentIndex,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: isDark
-            ? AppColors.slate600Light.withOpacity(
-                0.7,
-              )
-            : AppColors.slate600Light,
-        type: BottomNavigationBarType.fixed,
-        onTap:
-            (
-              index,
-            ) {
-              setState(
-                () {
-                  currentIndex = index;
-                  // Manejo de la navegación según el índice
-                },
-              );
-            },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(
-              Icons.home,
-            ),
-            label: 'Inicio',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(
-              Icons.pets,
-            ),
-            label: 'Pacientes',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(
-              Icons.calendar_month,
-            ),
-            label: 'Citas',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(
-              Icons.notifications,
-            ),
-            label: 'Recordatorios',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(
-              Icons.person,
-            ),
-            label: 'Perfil',
-          ),
-        ],
+      bottomNavigationBar: const VetNavbar(
+        currentRoute: '/agenda_citas',
       ),
     );
   }

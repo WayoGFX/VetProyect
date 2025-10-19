@@ -64,8 +64,7 @@ class _EditarCitaWidgetState
             Icons.arrow_back_ios_new,
           ),
           color: AppColors.textLight,
-          onPressed: () => context.go(
-            '/citas_del_dia',
+          onPressed: () => context.pop(
           ), // Vuelve al menu principal
         ),
         backgroundColor: AppColors.backgroundLight,

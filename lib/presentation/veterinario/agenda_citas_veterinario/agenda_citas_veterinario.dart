@@ -3,19 +3,19 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:vet_smart_ids/core/app_colors.dart';
 import 'package:go_router/go_router.dart';
-import 'package:vet_smart_ids/presentation/usuario/navbar/navbar_usuario.dart'; //GoRouter para la navegación
+import 'package:vet_smart_ids/presentation/veterinario/navbar/navbar_veterinario.dart'; //GoRouter para la navegación
 
-class AppointmentScreen
+class VetAppointmentScreen
     extends
         StatefulWidget {
-  static const String name = 'AppointmentScreen';
-  const AppointmentScreen({
+  static const String name = 'agenda_citas_veterinario';
+  const VetAppointmentScreen({
     super.key,
   });
 
   @override
   State<
-    AppointmentScreen
+    VetAppointmentScreen
   >
   createState() => _AppointmentScreenState();
 }
@@ -23,7 +23,7 @@ class AppointmentScreen
 class _AppointmentScreenState
     extends
         State<
-          AppointmentScreen
+          VetAppointmentScreen
         > {
   // Estado del calendario
   CalendarFormat _calendarFormat = CalendarFormat.month;
@@ -32,30 +32,30 @@ class _AppointmentScreenState
 
   // Datos simulados de citas
   final List<
-    CitaAgendada
+    CitaAgendada_dos
   >
   citasAgendadas = const [
-    CitaAgendada(
+    CitaAgendada_dos(
       title: 'Consulta general',
       time: '10:00 AM - 11:00 AM',
       icon: Icons.calendar_today,
     ),
-    CitaAgendada(
+    CitaAgendada_dos(
       title: 'Vacunación',
       time: '11:30 AM - 12:30 PM',
       icon: Icons.calendar_today,
     ),
-    CitaAgendada(
+    CitaAgendada_dos(
       title: 'Cirugía',
       time: '2:00 PM - 3:00 PM',
       icon: Icons.calendar_today,
     ),
-    CitaAgendada(
+    CitaAgendada_dos(
       title: 'Cirugía',
       time: '2:00 PM - 3:00 PM',
       icon: Icons.calendar_today,
     ),
-    CitaAgendada(
+    CitaAgendada_dos(
       title: 'Cirugía',
       time: '2:00 PM - 3:00 PM',
       icon: Icons.calendar_today,
@@ -235,8 +235,8 @@ class _AppointmentScreenState
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: const _NewAppointmentButton(),
       // navbar
-      bottomNavigationBar: const UserNavbar(
-        // Le pasamos la ruta estática para que el navbar resalte el ícono "Inicio".
+      bottomNavigationBar: const VetNavbar(
+        // Le pasamos la ruta estática para que el navbar resalte el ícono
         currentRoute: '/agenda_citas',
       ),
     );
@@ -464,12 +464,12 @@ class _CalendarWidget
 }
 
 //Tarjeta de Cita
-class CitaAgendada {
+class CitaAgendada_dos {
   final String title;
   final String time;
   final IconData icon;
 
-  const CitaAgendada({
+  const CitaAgendada_dos({
     required this.title,
     required this.time,
     required this.icon,
@@ -479,7 +479,7 @@ class CitaAgendada {
 class _AppointmentCard
     extends
         StatelessWidget {
-  final CitaAgendada data;
+  final CitaAgendada_dos data;
   const _AppointmentCard({
     required this.data,
   });
@@ -500,7 +500,7 @@ class _AppointmentCard
       onTap: () {
         // Redirigir a detalles de cita usando GoRouter
         context.push(
-          '/cita_detalles_usuario',
+          '/cita_detalles_veterinario',
         );
       },
       splashColor: AppColors.primary.withOpacity(
@@ -626,7 +626,7 @@ class _NewAppointmentButton
       child: InkWell(
         onTap: () {
           context.push(
-            '/chat',
+            '/crear_cita',
           );
         },
         borderRadius: BorderRadius.circular(
@@ -643,7 +643,7 @@ class _NewAppointmentButton
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(
-                Icons.question_answer,
+                Icons.add,
                 color: AppColors.white,
                 size: 24,
               ),
@@ -651,7 +651,7 @@ class _NewAppointmentButton
                 width: 8,
               ), // gap-2
               Text(
-                'Chat',
+                'Nueva Cita',
                 style:
                     Theme.of(
                       context,

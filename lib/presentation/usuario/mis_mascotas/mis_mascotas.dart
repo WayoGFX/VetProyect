@@ -102,7 +102,7 @@ class _MisMascotasScreenState
       // navbar
       bottomNavigationBar: const UserNavbar(
         // Le pasamos la ruta estática para que el navbar resalte el ícono "Inicio".
-        currentRoute: '/perfil_paciente',
+        currentRoute: '/mis_mascotas',
       ),
     );
   }

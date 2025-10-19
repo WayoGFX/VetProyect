@@ -46,7 +46,7 @@ class UserNavbar
     _NavItem(
       icon: Icons.person,
       label: 'Perfil',
-      route: '/perfil_usuario',
+      route: '/perfil_usuarios',
     ),
   ];
 

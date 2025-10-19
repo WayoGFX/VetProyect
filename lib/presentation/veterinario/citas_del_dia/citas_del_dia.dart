@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:vet_smart_ids/core/app_colors.dart';
+import 'package:vet_smart_ids/presentation/veterinario/navbar/navbar_veterinario.dart';
 
 // modelo
 
@@ -246,6 +247,10 @@ class _CitasDelDiaScreenState
           ],
         ),
       ),
+            bottomNavigationBar: const VetNavbar(
+        // Le pasamos la ruta estática para que el navbar resalte el ícono "Inicio".
+        currentRoute: '/agenda_citas',
+      ),
     );
   }
 }
@@ -296,49 +301,61 @@ class _AppointmentCard
   Widget build(
     BuildContext context,
   ) {
-    return Card(
-      elevation: 1,
-      margin: const EdgeInsets.only(
-        bottom: 8,
+    // MODIFICACIÓN: Envolvemos el Card con InkWell
+    return InkWell(
+      // Añadimos el evento onTap para la navegación
+      onTap: () {
+        // Navegamos a la ruta 'gesture' (nombre de tu pantalla de detalle)
+        context.push('/cita_detalles_veterinario');
+      },
+      // Hacemos que el efecto ripple tenga los mismos bordes que la tarjeta
+      borderRadius: BorderRadius.circular(
+        12,
       ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(
-          12,
+      child: Card(
+        elevation: 1,
+        margin: const EdgeInsets.only(
+          bottom: 8,
         ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(
-          12.0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(
+            12,
+          ),
         ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 28,
-              backgroundImage: NetworkImage(
-                appointment.imageUrl,
+        child: Padding(
+          padding: const EdgeInsets.all(
+            12.0,
+          ),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 28,
+                backgroundImage: NetworkImage(
+                  appointment.imageUrl,
+                ),
               ),
-            ),
-            const SizedBox(
-              width: 16,
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  appointment.title,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleMedium,
-                ),
-                Text(
-                  appointment.time,
-                  style: TextStyle(
-                    color: AppColors.slate500Light,
+              const SizedBox(
+                width: 16,
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    appointment.title,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.titleMedium,
                   ),
-                ),
-              ],
-            ),
-          ],
+                  Text(
+                    appointment.time,
+                    style: TextStyle(
+                      color: AppColors.slate500Light,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

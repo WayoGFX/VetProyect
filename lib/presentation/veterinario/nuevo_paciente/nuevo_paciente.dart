@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:vet_smart_ids/core/app_colors.dart';
 import 'package:vet_smart_ids/core/app_theme.dart';
+import 'package:vet_smart_ids/presentation/veterinario/navbar/navbar_veterinario.dart';
 
 /// Modelo para una entrada en el historial clínico
 class HistoryEntry {
@@ -106,9 +107,7 @@ class _NuevoPacienteWidgetState
           icon: const Icon(
             Icons.arrow_back,
           ),
-          onPressed: () => context.go(
-            '/citas_del_dia',
-          ), // Vuelve al menu principal// Vuelve a la pantalla anterior
+          onPressed: () => context.pop(),
         ),
         title: Text(
           'Nuevo Paciente',
@@ -367,7 +366,9 @@ class _NuevoPacienteWidgetState
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  // Lógica para guardar el nuevo paciente
+                  context.push(
+                    '/lista_pacientes', // Navega a la ruta de detalle de cita
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
@@ -386,6 +387,10 @@ class _NuevoPacienteWidgetState
             ),
           ],
         ),
+      ),
+      bottomNavigationBar: const VetNavbar(
+        // Le pasamos la ruta estática para que el navbar resalte el ícono
+        currentRoute: '/lista_pacientes',
       ),
     );
   }

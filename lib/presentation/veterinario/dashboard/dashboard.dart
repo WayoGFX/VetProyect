@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:vet_smart_ids/core/app_colors.dart';
+import 'package:vet_smart_ids/presentation/veterinario/navbar/navbar_veterinario.dart';
 
 class Dashboard extends StatelessWidget {
   const Dashboard({super.key});
@@ -27,14 +29,15 @@ class Dashboard extends StatelessWidget {
               Icons.notifications_none,
               color: isDark ? AppColors.white : AppColors.textLight,
             ),
-            onPressed: () {
-              // Navegar a la sección de notificaciones
-            },
+            onPressed: () => context.pop(),
           ),
         ],
       ),
       body: const DashboardContent(),
-      bottomNavigationBar: const DashboardBottomNavigation(),
+      bottomNavigationBar: const VetNavbar(
+        // Le pasamos la ruta estática para que el navbar resalte el ícono "Inicio".
+        currentRoute: '/dashboard',
+      ),
     );
   }
 }
@@ -460,58 +463,6 @@ class QuickAccessSection extends StatelessWidget {
             );
           }).toList(),
         ),
-      ],
-    );
-  }
-}
-
-class DashboardBottomNavigation extends StatefulWidget {
-  const DashboardBottomNavigation({super.key});
-
-  @override
-  State<DashboardBottomNavigation> createState() => _DashboardBottomNavigationState();
-}
-
-class _DashboardBottomNavigationState extends State<DashboardBottomNavigation> {
-  int _currentIndex = 0;
-
-  // Rutas de navegación
-  final List<String> _routes = [
-    '/inicio',
-    '/pacientes',
-    '/citas',
-    '/recordatorios',
-    '/perfil',
-  ];
-
-  // Maneja la acción de tocar un ítem de la barra
-  void _onTap(int index) {
-    if (index != _currentIndex) {
-      setState(() {
-        _currentIndex = index;
-      });
-      // Navega a la nueva ruta
-      Navigator.pushReplacementNamed(context, _routes[index]);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      // Color de fondo de la barra de navegación
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.9),
-      selectedItemColor: AppColors.primary,
-      unselectedItemColor: AppColors.slate500Light,
-      type: BottomNavigationBarType.fixed,
-      currentIndex: _currentIndex,
-      onTap: _onTap,
-      // Ítems de la barra de navegación
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Inicio'),
-        BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Pacientes'),
-        BottomNavigationBarItem(icon: Icon(Icons.calendar_month), label: 'Citas'),
-        BottomNavigationBarItem(icon: Icon(Icons.notifications), label: 'Recordatorios'),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
       ],
     );
   }

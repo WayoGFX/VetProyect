@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:vet_smart_ids/presentation/veterinario/navbar/navbar_veterinario.dart';
 import '../../../core/app_colors.dart';
 
 class CrearCitaWidget
@@ -64,9 +65,7 @@ class _CrearCitaWidgetState
             Icons.arrow_back_ios_new,
           ),
           color: AppColors.textLight,
-          onPressed: () => context.go(
-            '/citas_del_dia',
-          ), // Vuelve al menu principal
+          onPressed: () => context.pop(), // Vuelve al menu principal
         ),
         backgroundColor: AppColors.backgroundLight,
         elevation: 0,
@@ -211,6 +210,12 @@ class _CrearCitaWidgetState
                       isExpanded: true,
                       items: const [
                         DropdownMenuItem(
+                          value: 'Dr. Andy Torres',
+                          child: Text(
+                            'Dr. Andy Torres',
+                          ),
+                        ),
+                        DropdownMenuItem(
                           value: 'Dr. Carlos Rodriguez',
                           child: Text(
                             'Dr. Carlos Rodriguez',
@@ -303,6 +308,11 @@ class _CrearCitaWidgetState
           ],
         ),
       ),
+      bottomNavigationBar: const VetNavbar(
+        // Le pasamos la ruta estática para que el navbar resalte el ícono "Inicio".
+        currentRoute: '/agenda_citas',
+      ),
     );
   }
 }
+

@@ -5,7 +5,9 @@ import 'package:vet_smart_ids/presentation/generales/register_vet/register_vet.d
 import 'package:vet_smart_ids/presentation/home/home_screen.dart';
 import 'package:vet_smart_ids/presentation/screens.dart';
 import 'package:vet_smart_ids/presentation/veterinario/crear_cita/crear_cita.dart';
+import 'package:vet_smart_ids/presentation/veterinario/ficha_paciente_veterinario/ficha_paciente_veterinario.dart';
 import 'package:vet_smart_ids/presentation/veterinario/menu_veterinario/menu_veterinario.dart';
+import 'package:vet_smart_ids/presentation/veterinario/perfil_veterinarios/perfil_veterinario.dart';
 
 // Archivo de rutas
 
@@ -94,7 +96,7 @@ final appRouter = GoRouter(
     ),
     //GoRoute Jaime
     GoRoute(
-      path: '/perfil_usuario',
+      path: '/perfil_usuarios',
       name: PerfilUsuarioScreen.name,
       builder:
           (
@@ -162,7 +164,7 @@ final appRouter = GoRouter(
           },
     ),
     GoRoute(
-      path: '/cita_editar',
+      path: '/gesture_editar',
       name: GestureEditar.name,
       builder:
           (
@@ -170,6 +172,17 @@ final appRouter = GoRouter(
             state,
           ) {
             return const GestureEditar();
+          },
+    ),
+    GoRoute(
+      path: '/agenda_citas_veterinario',
+      name: VetAppointmentScreen.name,
+      builder:
+          (
+            context,
+            state,
+          ) {
+            return const VetAppointmentScreen();
           },
     ),
     GoRoute(
@@ -245,7 +258,19 @@ final appRouter = GoRouter(
     ),
 
     GoRoute(
-      path: '/cita_detalles',
+      path: '/perfil_veterinarios',
+      name: PerfilVeterinarioScreen.name,
+      builder:
+          (
+            context,
+            state,
+          ) {
+            return const PerfilVeterinarioScreen();
+          },
+    ),
+
+    GoRoute(
+      path: '/cita_detalles_veterinario',
       name: Gesture.name,
       builder:
           (
@@ -266,5 +291,25 @@ final appRouter = GoRouter(
             return const GestureUser();
           },
     ),
+    GoRoute(
+      path: '/ficha_paciente_veterinario',
+      name: VetPatientProfileScreen.name,
+      builder:
+          (
+            context,
+            state,
+          ) {
+            return VetPatientProfileScreen(
+              patient: maxData,
+            );
+          },
+    ),
   ],
+  errorBuilder:
+      (
+        context,
+        state,
+      ) {
+        return const ErrorWidget(); // tu widget personalizado
+      },
 );

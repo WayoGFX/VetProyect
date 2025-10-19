@@ -29,26 +29,32 @@ class UserMainMenuScreen
     MenuItemData(
       title: 'Chat con la Clínica',
       subtitle: 'Comunícate nuestro vetBot',
-      icon: Icons.chat_bubble,
+      icon: Icons.chat_outlined,
       route: '/chat',
     ),
     MenuItemData(
       title: 'Recordatorios',
       subtitle: 'Gestiona los recordatorios de cita para tu mascota',
-      icon: Icons.calendar_month,
+      icon: Icons.notifications_active_sharp,
       route: '/agenda_citas',
     ),
     MenuItemData(
       title: 'Perfil usuario',
       subtitle: 'Administra tu perfil',
       icon: Icons.person,
-      route: '/perfil_usuario',
+      route: '/perfil_usuarios',
     ),
     MenuItemData(
       title: 'Perfil de la Mascota',
       subtitle: 'Administra el perfil de tu mascota',
       icon: Icons.pets,
       route: '/mis_mascotas',
+    ),
+    MenuItemData(
+      title: 'ERROR',
+      subtitle: 'Esto es para demostrar que sirven los manejos de errores',
+      icon: Icons.error,
+      route: '/ruta_no_creada',
     ),
   ];
 

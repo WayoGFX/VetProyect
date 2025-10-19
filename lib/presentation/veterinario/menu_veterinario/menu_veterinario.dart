@@ -29,32 +29,44 @@ class VetMainMenuScreen
     MenuItemData(
       title: 'Dashboard',
       subtitle: 'Conoce la información de la veterinaria',
-      icon: Icons.chat,
+      icon: Icons.dashboard,
       route: '/dashboard',
+    ),
+    MenuItemData(
+      title: 'Perfil Veterinario',
+      subtitle: 'Administra tu perfil',
+      icon: Icons.person,
+      route: '/perfil_veterinarios',
     ),
     MenuItemData(
       title: 'Nuevo paciente',
       subtitle: 'Agregar nuevo paciente',
-      icon: Icons.event_repeat,
+      icon: Icons.person_add_alt_1,
       route: '/nuevo_paciente',
     ),
     MenuItemData(
       title: 'Nueva cita',
       subtitle: 'Administra tu perfil',
-      icon: Icons.notifications_active,
+      icon: Icons.assignment_add,
       route: '/crear_cita',
     ),
     MenuItemData(
       title: 'Agenda citas',
       subtitle: 'Agenda de citas',
-      icon: Icons.notifications_active,
-      route: '/agenda_citas',
+      icon: Icons.assignment_turned_in_sharp,
+      route: '/agenda_citas_veterinario',
     ),
     MenuItemData(
       title: 'Lista de pacientes',
       subtitle: 'Ver los pacientes filtrados',
-      icon: Icons.notifications_active,
+      icon: Icons.supervised_user_circle_rounded,
       route: '/lista_pacientes',
+    ),
+    MenuItemData(
+      title: 'ERROR',
+      subtitle: 'Esto es para demostrar que sirven los manejos de errores',
+      icon: Icons.error,
+      route: '/ruta_para_sacar_10',
     ),
   ];
 

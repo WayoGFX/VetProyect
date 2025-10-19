@@ -43,7 +43,13 @@ export 'package:vet_smart_ids/presentation/usuario/ficha_paciente/ficha_paciente
 export 'package:vet_smart_ids/presentation/usuario/ficha_paciente/ficha_paciente_model.dart';
 
 //Widget Cita detalles - Andy
-export 'package:vet_smart_ids/presentation/veterinario/cita_detalles/cita_detalles.dart';
+export 'package:vet_smart_ids/presentation/veterinario/cita_detalles_veterinario/cita_detalles_veterinario.dart';
+
+//Widget perfil veterinarios - Andy
+export 'package:vet_smart_ids/presentation/veterinario/perfil_veterinarios/perfil_veterinario.dart';
+
+// Widget de agenda citas veterinario - Andy
+export 'package:vet_smart_ids/presentation/veterinario/agenda_citas_veterinario/agenda_citas_veterinario.dart';
 
 //Widget Editar cita - Andy
 export 'package:vet_smart_ids/presentation/veterinario/cita_editar/cita_editar.dart';

@@ -176,7 +176,7 @@ class LoginButton
         onPressed: () {
           GoRouter.of(
             context,
-          ).go(
+          ).push(
             '/menu_usuario',
           );
         },

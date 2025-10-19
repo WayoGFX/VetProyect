@@ -176,7 +176,7 @@ class LoginButton
         onPressed: () {
           GoRouter.of(
             context,
-          ).go(
+          ).push(
             '/menu_veterinario',
           );
         },
@@ -205,7 +205,7 @@ class SignUpText
       onTap: () {
         // Navega a la pantalla de registro usando GoRouter
         context.go(
-          '/register_usuario',
+          '/register_vet',
         ); // <-- Cambio a GoRouter
       },
       child: const Text.rich(
