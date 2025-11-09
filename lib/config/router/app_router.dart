@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:vet_smart_ids/presentation/generales/login_vet/login_vet.dart';
 import 'package:vet_smart_ids/presentation/generales/register_vet/register_vet.dart';
+import 'package:vet_smart_ids/presentation/generales/test_api/test_api_screen.dart';
 import 'package:vet_smart_ids/presentation/home/home_screen.dart';
 import 'package:vet_smart_ids/presentation/screens.dart';
 import 'package:vet_smart_ids/presentation/veterinario/crear_cita/crear_cita.dart';
@@ -23,6 +24,18 @@ final appRouter = GoRouter(
             state,
           ) {
             return const HomeScreen();
+          },
+    ),
+    // Ruta de prueba de API (ELIMINAR EN PRODUCCIÓN)
+    GoRoute(
+      path: '/test_api',
+      name: TestApiScreen.name,
+      builder:
+          (
+            context,
+            state,
+          ) {
+            return const TestApiScreen();
           },
     ),
     //GoRoute Wayo

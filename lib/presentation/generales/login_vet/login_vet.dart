@@ -1,88 +1,123 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:vet_smart_ids/core/app_colors.dart';
+import 'package:vet_smart_ids/providers/veterinario_provider.dart';
 
-class Login_Vet
-    extends
-        StatelessWidget {
-  const Login_Vet({
-    super.key,
-  });
+class Login_Vet extends StatelessWidget {
+  const Login_Vet({super.key});
   static const String name = "login_vet";
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
+  Widget build(BuildContext context) {
     return const VetSmartLoginScreen();
   }
 }
 
-class VetSmartLoginScreen
-    extends
-        StatelessWidget {
-  const VetSmartLoginScreen({
-    super.key,
-  });
+class VetSmartLoginScreen extends StatefulWidget {
+  const VetSmartLoginScreen({super.key});
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
+  State<VetSmartLoginScreen> createState() => _VetSmartLoginScreenState();
+}
+
+class _VetSmartLoginScreenState extends State<VetSmartLoginScreen> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final veterinarioProvider =
+        Provider.of<VeterinarioProvider>(context, listen: false);
+
+    final success = await veterinarioProvider.login(
+      _emailController.text.trim(),
+      _passwordController.text,
+    );
+
+    if (!mounted) return;
+
+    if (success) {
+      // Login exitoso, navegar al menú veterinario
+      context.go('/menu_veterinario');
+    } else {
+      // Mostrar error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              veterinarioProvider.errorMessage ?? 'Error al iniciar sesión'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final veterinarioProvider = Provider.of<VeterinarioProvider>(context);
+
     return Scaffold(
       body: Column(
         children: [
           const LoginHeaderImage(),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24,
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  SizedBox(
-                    height: 24,
-                  ),
-
-                  // Título principal
-                  Text(
-                    "Bienvenido a VetSmart",
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textLight,
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: 24),
+                    // Título principal
+                    const Text(
+                      "Bienvenido a VetSmart",
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textLight,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  SizedBox(
-                    height: 8,
-                  ),
-
-                  // Subtítulo
-                  Text(
-                    "Inicia sesión para administrar tu clínica",
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.slate500Light,
+                    const SizedBox(height: 8),
+                    // Subtítulo
+                    const Text(
+                      "Inicia sesión para administrar tu clínica",
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.slate500Light,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
+                    const SizedBox(height: 32),
 
-                  SizedBox(
-                    height: 32,
-                  ),
-                  LoginForm(),
-                  SizedBox(
-                    height: 16,
-                  ),
-                  LoginButton(),
-                  SizedBox(
-                    height: 24,
-                  ),
-                  SignUpText(),
-                ],
+                    // Campo de correo
+                    LoginForm(
+                      emailController: _emailController,
+                      passwordController: _passwordController,
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Botón de login
+                    LoginButton(
+                      onPressed: veterinarioProvider.isLoading ? null : _handleLogin,
+                      isLoading: veterinarioProvider.isLoading,
+                    ),
+
+                    const SizedBox(height: 24),
+                    const SignUpText(),
+                  ],
+                ),
               ),
             ),
           ),
@@ -117,74 +152,92 @@ class LoginHeaderImage
   }
 }
 
-class LoginForm
-    extends
-        StatelessWidget {
+class LoginForm extends StatelessWidget {
+  final TextEditingController emailController;
+  final TextEditingController passwordController;
+
   const LoginForm({
     super.key,
+    required this.emailController,
+    required this.passwordController,
   });
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
-    // Usamos TextFormField para mejorar la integración con formularios
+  Widget build(BuildContext context) {
     return Column(
       children: [
         // Campo de correo
         TextFormField(
+          controller: emailController,
+          keyboardType: TextInputType.emailAddress,
           style: const TextStyle(
             color: AppColors.textLight,
           ),
-          decoration: InputDecoration(
+          decoration: const InputDecoration(
             hintText: 'Correo',
+            prefixIcon: Icon(Icons.email),
           ),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Ingresa tu correo';
+            }
+            if (!value.contains('@')) {
+              return 'Ingresa un correo válido';
+            }
+            return null;
+          },
         ),
-        const SizedBox(
-          height: 16,
-        ),
+        const SizedBox(height: 16),
 
         // Campo de contraseña
         TextFormField(
+          controller: passwordController,
           obscureText: true,
           style: const TextStyle(
             color: AppColors.textLight,
           ),
-          decoration: InputDecoration(
+          decoration: const InputDecoration(
             hintText: 'Contraseña',
+            prefixIcon: Icon(Icons.lock),
           ),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Ingresa tu contraseña';
+            }
+            return null;
+          },
         ),
       ],
     );
   }
 }
 
-class LoginButton
-    extends
-        StatelessWidget {
+class LoginButton extends StatelessWidget {
+  final VoidCallback? onPressed;
+  final bool isLoading;
+
   const LoginButton({
     super.key,
+    required this.onPressed,
+    this.isLoading = false,
   });
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
+  Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () {
-          GoRouter.of(
-            context,
-          ).push(
-            '/menu_veterinario',
-          );
-        },
-        // Los estilos se heredan de app_theme.dart
-        child: const Text(
-          "Acceso",
-          // El estilo de texto base se hereda de app_theme.dart
-        ),
+        onPressed: onPressed,
+        child: isLoading
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
+            : const Text("Acceso"),
       ),
     );
   }

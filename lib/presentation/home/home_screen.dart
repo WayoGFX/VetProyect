@@ -21,6 +21,15 @@ class HomeScreen
         ),
       ),
       body: _HomeBody(),
+      // Botón flotante para probar API (TEMPORAL - ELIMINAR EN PRODUCCIÓN)
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          context.push('/test_api');
+        },
+        icon: const Icon(Icons.api),
+        label: const Text('Test API'),
+        backgroundColor: Colors.deepPurple,
+      ),
     );
   }
 }
