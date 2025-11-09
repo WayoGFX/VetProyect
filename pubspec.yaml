@@ -39,6 +39,10 @@ dependencies:
   google_fonts: ^6.3.2 # FUENTES DE GOOGLE
   table_calendar: ^3.2.0
 
+  # Gestión de estado y peticiones HTTP
+  provider: ^6.1.2 # Gestión de estado
+  http: ^1.2.2 # Peticiones HTTP a la API
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
