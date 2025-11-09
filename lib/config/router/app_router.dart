@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:vet_smart_ids/presentation/generales/login_vet/login_vet.dart';
 import 'package:vet_smart_ids/presentation/generales/register_vet/register_vet.dart';
+import 'package:vet_smart_ids/presentation/generales/role_selection/role_selection_screen.dart';
 import 'package:vet_smart_ids/presentation/generales/test_api/test_api_screen.dart';
 import 'package:vet_smart_ids/presentation/home/home_screen.dart';
 import 'package:vet_smart_ids/presentation/screens.dart';
@@ -13,8 +14,16 @@ import 'package:vet_smart_ids/presentation/veterinario/perfil_veterinarios/perfi
 // Archivo de rutas
 
 final appRouter = GoRouter(
-  initialLocation: '/home',
+  initialLocation: '/role_selection',
   routes: [
+    // Ruta inicial: Selección de rol
+    GoRoute(
+      path: '/role_selection',
+      name: RoleSelectionScreen.name,
+      builder: (context, state) {
+        return const RoleSelectionScreen();
+      },
+    ),
     GoRoute(
       path: '/home',
       name: HomeScreen.name,
