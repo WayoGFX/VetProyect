@@ -166,7 +166,7 @@ class ApiService {
       _create('Citas', cita.toJson(), (json) => Cita.fromJson(json));
 
   Future<void> updateCita(int id, Cita cita) =>
-      _update('Citas', id, cita.toJson());
+      _update('Citas', id, cita.toJsonUpdate());
 
   Future<void> deleteCita(int id) => _delete('Citas', id);
 

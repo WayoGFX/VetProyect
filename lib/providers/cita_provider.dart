@@ -70,7 +70,7 @@ class CitaProvider extends ChangeNotifier {
     }
   }
 
-  /// Cargar citas del día actual
+  /// Cargar citas desde hoy en adelante (hoy, mañana, pasado, etc.)
   Future<void> loadCitasDelDia() async {
     _isLoading = true;
     _errorMessage = null;
@@ -78,19 +78,42 @@ class CitaProvider extends ChangeNotifier {
 
     try {
       final todasCitas = await _apiService.getCitas();
-      final hoy = DateTime.now();
+      final ahora = DateTime.now();
+      // Fecha de hoy a las 00:00:00 para comparar
+      final hoyInicio = DateTime(ahora.year, ahora.month, ahora.day);
+
+      // Filtrar citas desde hoy en adelante
       _citas = todasCitas.where((c) {
-        return c.fechaHora.year == hoy.year &&
-            c.fechaHora.month == hoy.month &&
-            c.fechaHora.day == hoy.day;
+        final fechaCita = DateTime(c.fechaHora.year, c.fechaHora.month, c.fechaHora.day);
+        return fechaCita.isAfter(hoyInicio) || fechaCita.isAtSameMomentAs(hoyInicio);
       }).toList();
+
+      // Ordenar por fecha (más cercanas primero)
+      _citas.sort((a, b) => a.fechaHora.compareTo(b.fechaHora));
     } catch (e) {
       _errorMessage = e.toString();
-      print('Error al cargar citas del día: $e');
+      print('Error al cargar citas: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  /// Obtener citas de esta semana (desde mañana hasta fin de semana)
+  List<Cita> get citasProximasSemana {
+    final ahora = DateTime.now();
+    final manana = DateTime(ahora.year, ahora.month, ahora.day).add(const Duration(days: 1));
+
+    // Encontrar el domingo de esta semana
+    final diasHastaDomingo = DateTime.sunday - ahora.weekday;
+    final finSemana = DateTime(ahora.year, ahora.month, ahora.day)
+        .add(Duration(days: diasHastaDomingo >= 0 ? diasHastaDomingo : diasHastaDomingo + 7));
+
+    return _citas.where((c) {
+      final fechaCita = DateTime(c.fechaHora.year, c.fechaHora.month, c.fechaHora.day);
+      return (fechaCita.isAfter(manana) || fechaCita.isAtSameMomentAs(manana)) &&
+             (fechaCita.isBefore(finSemana) || fechaCita.isAtSameMomentAs(finSemana));
+    }).toList();
   }
 
   /// Cargar una cita por ID
