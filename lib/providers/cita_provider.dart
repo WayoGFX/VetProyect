@@ -116,6 +116,49 @@ class CitaProvider extends ChangeNotifier {
     }).toList();
   }
 
+  /// Cargar citas de un mes específico
+  Future<void> loadCitasByMonth(int year, int month) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final todasCitas = await _apiService.getCitas();
+
+      // Filtrar citas del mes especificado
+      _citas = todasCitas.where((c) {
+        return c.fechaHora.year == year && c.fechaHora.month == month;
+      }).toList();
+
+      // Ordenar por fecha
+      _citas.sort((a, b) => a.fechaHora.compareTo(b.fechaHora));
+    } catch (e) {
+      _errorMessage = e.toString();
+      print('Error al cargar citas del mes: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Obtener citas de un día específico
+  List<Cita> getCitasByDate(DateTime date) {
+    final targetDate = DateTime(date.year, date.month, date.day);
+    return _citas.where((c) {
+      final citaDate = DateTime(c.fechaHora.year, c.fechaHora.month, c.fechaHora.day);
+      return citaDate.isAtSameMomentAs(targetDate);
+    }).toList();
+  }
+
+  /// Verificar si un día tiene citas
+  bool hasCitasOnDay(DateTime date) {
+    final targetDate = DateTime(date.year, date.month, date.day);
+    return _citas.any((c) {
+      final citaDate = DateTime(c.fechaHora.year, c.fechaHora.month, c.fechaHora.day);
+      return citaDate.isAtSameMomentAs(targetDate);
+    });
+  }
+
   /// Cargar una cita por ID
   Future<void> loadCitaById(int id) async {
     _isLoading = true;
