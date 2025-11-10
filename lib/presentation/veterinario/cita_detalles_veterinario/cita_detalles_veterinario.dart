@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:vet_smart_ids/presentation/veterinario/cita_editar/cita_editar.dart';
+import 'package:provider/provider.dart';
 import 'package:vet_smart_ids/core/app_colors.dart';
-import 'package:vet_smart_ids/presentation/veterinario/navbar/navbar_veterinario.dart'; // Paleta de colores de la aplicación
+import 'package:vet_smart_ids/presentation/veterinario/navbar/navbar_veterinario.dart';
+import 'package:vet_smart_ids/providers/cita_provider.dart';
 
 class Gesture
     extends
@@ -26,12 +27,201 @@ class _AppointmentDetailPageState
         State<
           Gesture
         > {
-  bool isDone = false; // Estado para el switch de "Cita Realizada"
+  String _formatFechaHora(
+    DateTime fecha,
+  ) {
+    final meses = [
+      '',
+      'Ene',
+      'Feb',
+      'Mar',
+      'Abr',
+      'May',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dic',
+    ];
+    final dias = [
+      '',
+      'Lun',
+      'Mar',
+      'Mié',
+      'Jue',
+      'Vie',
+      'Sáb',
+      'Dom',
+    ];
+
+    final hour = fecha.hour;
+    final minute = fecha.minute.toString().padLeft(
+      2,
+      '0',
+    );
+    final period =
+        hour >=
+            12
+        ? 'PM'
+        : 'AM';
+    final hour12 =
+        hour >
+            12
+        ? hour -
+              12
+        : (hour ==
+                  0
+              ? 12
+              : hour);
+
+    return '${dias[fecha.weekday]}, ${fecha.day} de ${meses[fecha.month]} de ${fecha.year} - $hour12:$minute $period';
+  }
+
+  Color _getEstadoColor(
+    String estado,
+  ) {
+    switch (estado.toLowerCase()) {
+      case 'pendiente':
+        return Colors.orange;
+      case 'completada':
+      case 'realizada':
+        return Colors.green;
+      case 'cancelada':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  Future<
+    void
+  >
+  _eliminarCita(
+    BuildContext context,
+    int citaId,
+  ) async {
+    final confirmed =
+        await showDialog<
+          bool
+        >(
+          context: context,
+          builder:
+              (
+                context,
+              ) => AlertDialog(
+                title: const Text(
+                  'Eliminar Cita',
+                ),
+                content: const Text(
+                  '¿Estás seguro de que quieres eliminar esta cita?',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () =>
+                        Navigator.of(
+                          context,
+                        ).pop(
+                          false,
+                        ),
+                    child: const Text(
+                      'Cancelar',
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () =>
+                        Navigator.of(
+                          context,
+                        ).pop(
+                          true,
+                        ),
+                    child: Text(
+                      'Eliminar',
+                      style: TextStyle(
+                        color: AppColors.dangerText,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+        );
+
+    if (confirmed ==
+            true &&
+        mounted) {
+      final citaProvider = context
+          .read<
+            CitaProvider
+          >();
+      final success = await citaProvider.deleteCita(
+        citaId,
+      );
+
+      if (!mounted) return;
+
+      if (success) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Cita eliminada exitosamente',
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+        // Recargar citas y regresar
+        await citaProvider.loadCitasDelDia();
+        if (mounted) context.pop();
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(
+          SnackBar(
+            content: Text(
+              citaProvider.errorMessage ??
+                  'Error al eliminar la cita',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(
     BuildContext context,
   ) {
+    final citaProvider = context
+        .watch<
+          CitaProvider
+        >();
+    final cita = citaProvider.citaSeleccionada;
+
+    if (cita ==
+        null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text(
+            'Detalle de Cita',
+          ),
+          leading: IconButton(
+            icon: const Icon(
+              Icons.arrow_back_ios_new,
+            ),
+            onPressed: () => context.pop(),
+          ),
+        ),
+        body: const Center(
+          child: Text(
+            'No se encontró información de la cita',
+          ),
+        ),
+      );
+    }
+
     final isDark =
         Theme.of(
           context,
@@ -41,14 +231,14 @@ class _AppointmentDetailPageState
     return Scaffold(
       backgroundColor: isDark
           ? AppColors.textLight
-          : AppColors.backgroundLight, // Define el color de fondo
+          : AppColors.backgroundLight,
       appBar: AppBar(
         backgroundColor: isDark
-            ? AppColors.textLight.withOpacity(
-                0.8,
+            ? AppColors.textLight.withValues(
+                alpha: 0.8,
               )
-            : AppColors.backgroundLight.withOpacity(
-                0.8,
+            : AppColors.backgroundLight.withValues(
+                alpha: 0.8,
               ),
         elevation: 0,
         centerTitle: true,
@@ -77,7 +267,7 @@ class _AppointmentDetailPageState
         ),
         child: ListView(
           children: [
-            // Contenedor principal con información de la cita
+            // Información de la mascota
             Container(
               decoration: BoxDecoration(
                 color: isDark
@@ -90,7 +280,7 @@ class _AppointmentDetailPageState
                   BoxShadow(
                     color: isDark
                         ? Colors.black26
-                        : AppColors.black05, // Sombra para elevación
+                        : AppColors.black05,
                     blurRadius: 10,
                   ),
                 ],
@@ -101,56 +291,65 @@ class _AppointmentDetailPageState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Fila de información de la mascota: foto, nombre y raza
+                  // Foto y nombre de la mascota
                   Row(
                     children: [
-                      Container(
-                        width: 64,
-                        height: 64,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary20,
-                          borderRadius: BorderRadius.circular(
-                            9999,
-                          ),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(
-                            9999,
-                          ),
-                          child: Image.network(
-                            'https://lh3.googleusercontent.com/aida-public/AB6AXuBQWtZBWDo8FaFdszSnQZ1A1sz5LOz27ekmfaJiFeaWWld8DosqR5HWTG7CvKd4SHkqf6U8NupB41JAewX6eU_jCFIazCf65dfH6DDo9EFPSgG4aSRkGE6qgRgS4qKcvGe4w42QS3VflJqm3AULCJRs5FVofXS6N36V9uAPOCyLWv946ROYgj1GFZEHkMsBsbeL5Gozo_sJZhsDSa06_dctXmhwnswjjg_m_XDaBbditOqYMxpXn7OTjIZYLjFSAPo5K45EkcVGrjk',
-                            fit: BoxFit.cover,
-                          ),
-                        ),
+                      CircleAvatar(
+                        radius: 32,
+                        backgroundColor: AppColors.primary20,
+                        backgroundImage:
+                            cita.mascotaFotoUrl !=
+                                    null &&
+                                cita.mascotaFotoUrl!.isNotEmpty
+                            ? NetworkImage(
+                                cita.mascotaFotoUrl!,
+                              )
+                            : null,
+                        child:
+                            cita.mascotaFotoUrl ==
+                                    null ||
+                                cita.mascotaFotoUrl!.isEmpty
+                            ? Icon(
+                                Icons.pets,
+                                color: AppColors.primary,
+                                size: 32,
+                              )
+                            : null,
                       ),
                       const SizedBox(
                         width: 16,
                       ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Max',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: isDark
-                                  ? AppColors.white
-                                  : AppColors.textLight,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              cita.mascotaNombre ??
+                                  'Mascota',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: isDark
+                                    ? AppColors.white
+                                    : AppColors.textLight,
+                              ),
                             ),
-                          ),
-                          Text(
-                            'Golden Retriever',
-                            style: TextStyle(
-                              color: isDark
-                                  ? AppColors.slate600Light.withOpacity(
-                                      0.7,
-                                    )
-                                  : AppColors.slate600Light,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
+                            if (cita.usuarioNombre !=
+                                    null &&
+                                cita.usuarioNombre!.isNotEmpty)
+                              Text(
+                                'Dueño: ${cita.usuarioNombre}',
+                                style: TextStyle(
+                                  color: isDark
+                                      ? AppColors.slate600Light.withValues(
+                                          alpha: 0.7,
+                                        )
+                                      : AppColors.slate600Light,
+                                  fontSize: 14,
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -158,36 +357,40 @@ class _AppointmentDetailPageState
                     height: 24,
                   ),
 
-                  // Fila: Fecha y hora de la cita
+                  // Fecha y hora
                   _infoRow(
                     icon: Icons.calendar_month,
                     iconColor: AppColors.primary,
                     title: 'Fecha y Hora',
-                    subtitle: 'Lunes, 20 de Mayo de 2024 - 10:30 AM',
+                    subtitle: _formatFechaHora(
+                      cita.fechaHora,
+                    ),
                     isDark: isDark,
                   ),
                   const SizedBox(
                     height: 16,
                   ),
 
-                  // Fila: Motivo de la consulta
+                  // Motivo
                   _infoRow(
                     icon: Icons.medical_services,
                     iconColor: AppColors.primary,
                     title: 'Motivo de la consulta',
-                    subtitle: 'Chequeo anual y vacunación',
+                    subtitle: cita.motivo,
                     isDark: isDark,
                   ),
                   const SizedBox(
                     height: 16,
                   ),
 
-                  // Fila: Veterinario asignado
+                  // Veterinario
                   _infoRow(
                     icon: Icons.person,
                     iconColor: AppColors.primary,
                     title: 'Veterinario Asignado',
-                    subtitle: 'Dr. Carlos Rodriguez',
+                    subtitle:
+                        cita.veterinarioNombre ??
+                        'No asignado',
                     isDark: isDark,
                   ),
                 ],
@@ -198,7 +401,147 @@ class _AppointmentDetailPageState
               height: 24,
             ),
 
-            // Contenedor para el estado de la cita con switch personalizado
+            // Descripción (si existe)
+            if (cita.citaDescripcion !=
+                    null &&
+                cita.citaDescripcion!.isNotEmpty) ...[
+              Container(
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppColors.textLight
+                      : AppColors.cardLight,
+                  borderRadius: BorderRadius.circular(
+                    24,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: isDark
+                          ? Colors.black26
+                          : AppColors.black05,
+                      blurRadius: 10,
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.all(
+                  24,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.notes,
+                          color: AppColors.secondary,
+                        ),
+                        const SizedBox(
+                          width: 8,
+                        ),
+                        Text(
+                          'Descripción',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: isDark
+                                ? AppColors.white
+                                : AppColors.textLight,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(
+                      height: 12,
+                    ),
+                    Text(
+                      cita.citaDescripcion!,
+                      style: TextStyle(
+                        color: isDark
+                            ? AppColors.slate600Light.withValues(
+                                alpha: 0.7,
+                              )
+                            : AppColors.slate600Light,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(
+                height: 24,
+              ),
+            ],
+
+            // Notas adicionales (si existen)
+            if (cita.notas !=
+                    null &&
+                cita.notas!.isNotEmpty) ...[
+              Container(
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppColors.textLight
+                      : AppColors.cardLight,
+                  borderRadius: BorderRadius.circular(
+                    24,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: isDark
+                          ? Colors.black26
+                          : AppColors.black05,
+                      blurRadius: 10,
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.all(
+                  24,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.description,
+                          color: AppColors.secondary,
+                        ),
+                        const SizedBox(
+                          width: 8,
+                        ),
+                        Text(
+                          'Notas Adicionales',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: isDark
+                                ? AppColors.white
+                                : AppColors.textLight,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(
+                      height: 12,
+                    ),
+                    Text(
+                      cita.notas!,
+                      style: TextStyle(
+                        color: isDark
+                            ? AppColors.slate600Light.withValues(
+                                alpha: 0.7,
+                              )
+                            : AppColors.slate600Light,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(
+                height: 24,
+              ),
+            ],
+
+            // Estado de la cita
             Container(
               decoration: BoxDecoration(
                 color: isDark
@@ -246,115 +589,64 @@ class _AppointmentDetailPageState
                   const SizedBox(
                     height: 12,
                   ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Marcar como realizado o pendiente',
-                          style: TextStyle(
-                            color: isDark
-                                ? AppColors.slate600Light
-                                : AppColors.slate600Light,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color:
+                          _getEstadoColor(
+                            cita.estado,
+                          ).withValues(
+                            alpha: 0.1,
+                          ),
+                      borderRadius: BorderRadius.circular(
+                        12,
+                      ),
+                      border: Border.all(
+                        color: _getEstadoColor(
+                          cita.estado,
+                        ),
+                        width: 2,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.circle,
+                          size: 12,
+                          color: _getEstadoColor(
+                            cita.estado,
                           ),
                         ),
-                      ),
-                      _customSwitch(), // Switch para cambiar el estado
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(
-              height: 24,
-            ),
-
-            // Contenedor para Notas adicionales
-            Container(
-              decoration: BoxDecoration(
-                color: isDark
-                    ? AppColors.textLight
-                    : AppColors.cardLight,
-                borderRadius: BorderRadius.circular(
-                  24,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: isDark
-                        ? Colors.black26
-                        : AppColors.black05,
-                    blurRadius: 10,
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.all(
-                24,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.description,
-                        color: AppColors.secondary,
-                      ),
-                      const SizedBox(
-                        width: 8,
-                      ),
-                      Text(
-                        'Notas Adicionales',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                          color: isDark
-                              ? AppColors.white
-                              : AppColors.textLight,
+                        const SizedBox(
+                          width: 8,
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(
-                    height: 12,
-                  ),
-                  Text(
-                    'Max ha estado un poco decaído últimamente y ha perdido el apetito. Traer muestra de heces para análisis. Recordar revisar la cadera izquierda, mostró sensibilidad al tacto',
-                    style: TextStyle(
-                      color: isDark
-                          ? AppColors.slate600Light.withOpacity(
-                              0.7,
-                            )
-                          : AppColors.slate600Light,
-                      height: 1.4,
+                        Text(
+                          cita.estado,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: _getEstadoColor(
+                              cita.estado,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-
-            const SizedBox(
-              height: 32,
-            ),
-
-            // Sección de botones de acción
+            // Botones de acción
             Column(
               children: [
-                // Botón para editar la cita
+                // Botón Editar
                 ElevatedButton.icon(
                   onPressed: () {
-                    debugPrint(
-                      "Presiono boton editar",
-                    );
-                    // Navegar a la pantalla de editar cita
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (
-                              context,
-                            ) => const GestureEditar(),
-                      ),
+                    context.push(
+                      '/gesture_editar',
                     );
                   },
                   icon: Icon(
@@ -386,63 +678,12 @@ class _AppointmentDetailPageState
                 const SizedBox(
                   height: 12,
                 ),
-                // Botón para eliminar la cita
+                // Botón Eliminar
                 ElevatedButton.icon(
-                  onPressed: () {
-                    // Muestra un diálogo de confirmación para eliminar
-                    showDialog(
-                      context: context,
-                      builder:
-                          (
-                            context,
-                          ) => AlertDialog(
-                            title: const Text(
-                              'Eliminar Cita',
-                            ),
-                            content: const Text(
-                              '¿Estás seguro de que quieres eliminar esta cita?',
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  debugPrint(
-                                    "Presiono boton eliminar",
-                                  );
-                                  Navigator.of(
-                                    context,
-                                  ).pop(); // Cierra el diálogo
-                                },
-                                child: const Text(
-                                  'Cancelar',
-                                ),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.of(
-                                    context,
-                                  ).pop();
-                                  // Lógica para eliminar la cita
-                                  ScaffoldMessenger.of(
-                                    context,
-                                  ).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Cita eliminada',
-                                      ),
-                                    ),
-                                  );
-                                },
-                                child: Text(
-                                  'Eliminar',
-                                  style: TextStyle(
-                                    color: AppColors.dangerText,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                    );
-                  },
+                  onPressed: () => _eliminarCita(
+                    context,
+                    cita.citaId!,
+                  ),
                   icon: Icon(
                     Icons.delete,
                     color: AppColors.dangerText,
@@ -456,8 +697,8 @@ class _AppointmentDetailPageState
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.secondary.withOpacity(
-                      0.7,
+                    backgroundColor: AppColors.secondary.withValues(
+                      alpha: 0.7,
                     ),
                     minimumSize: const Size(
                       double.infinity,
@@ -476,98 +717,16 @@ class _AppointmentDetailPageState
 
             const SizedBox(
               height: 80,
-            ), // espacio adicional
+            ),
           ],
         ),
       ),
-
-      // Barra de navegación inferior
-      /*bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: isDark
-            ? AppColors.textLight
-            : AppColors.backgroundLight,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: isDark
-            ? AppColors.slate600Light
-            : AppColors.slate600Light,
-        currentIndex: 2, // Posiciona en "Citas"
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(
-              Icons.home,
-            ),
-            label: 'Inicio',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(
-              Icons.pets,
-            ),
-            label: 'Pacientes',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(
-              Icons.calendar_month,
-            ),
-            label: 'Citas',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(
-              Icons.notifications,
-            ),
-            label: 'Recordatorios',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(
-              Icons.person,
-            ),
-            label: 'Perfil',
-          ),
-        ],
-        onTap:
-            (
-              index,
-            ) {
-              // Navegación principal
-              switch (index) {
-                case 0:
-                  Navigator.pushNamed(
-                    context,
-                    '/home',
-                  );
-                  break;
-                case 1:
-                  Navigator.pushNamed(
-                    context,
-                    '/pacientes',
-                  );
-                  break;
-                case 2:
-                  // Ya estamos en "Citas"
-                  break;
-                case 3:
-                  Navigator.pushNamed(
-                    context,
-                    '/recordatorios',
-                  );
-                  break;
-                case 4:
-                  Navigator.pushNamed(
-                    context,
-                    '/perfil',
-                  );
-                  break;
-              }
-            },
-      ),*/
       bottomNavigationBar: const VetNavbar(
-        // Le pasamos la ruta estática para que el navbar resalte el ícono "Inicio".
         currentRoute: '/agenda_citas',
       ),
     );
   }
 
-  // Widget reutilizable para mostrar un ícono con título y subtítulo
   Widget _infoRow({
     required IconData icon,
     required Color iconColor,
@@ -606,8 +765,8 @@ class _AppointmentDetailPageState
                 subtitle,
                 style: TextStyle(
                   color: isDark
-                      ? AppColors.slate600Light.withOpacity(
-                          0.7,
+                      ? AppColors.slate600Light.withValues(
+                          alpha: 0.7,
                         )
                       : AppColors.slate600Light,
                 ),
@@ -616,75 +775,6 @@ class _AppointmentDetailPageState
           ),
         ),
       ],
-    );
-  }
-
-  // Switch personalizado para alternar el estado de la cita
-  Widget _customSwitch() {
-    return GestureDetector(
-      onTap: () {
-        setState(
-          () {
-            isDone = !isDone; // Invierte el estado
-          },
-        );
-      },
-      child: AnimatedContainer(
-        duration: const Duration(
-          milliseconds: 300,
-        ),
-        width: 130,
-        height: 40,
-        decoration: BoxDecoration(
-          color: isDone
-              ? AppColors.primary
-              : AppColors.secondary, // Color según el estado
-          borderRadius: BorderRadius.circular(
-            40,
-          ),
-        ),
-        child: Stack(
-          children: [
-            AnimatedPositioned(
-              duration: const Duration(
-                milliseconds: 300,
-              ),
-              curve: Curves.easeInOut,
-              left: isDone
-                  ? 58
-                  : 4, // Posición del selector
-              top: 4,
-              bottom: 4,
-              child: Container(
-                width: 65,
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: BorderRadius.circular(
-                    32,
-                  ),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  isDone
-                      ? 'Realizado'
-                      : 'Pendiente', // Texto según el estado
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                    color: isDone
-                        ? const Color(
-                            0xFF3B82F6,
-                          )
-                        : const Color(
-                            0xFFD9534F,
-                          ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

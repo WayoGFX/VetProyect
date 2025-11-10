@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:vet_smart_ids/core/app_colors.dart';
 import 'package:vet_smart_ids/presentation/veterinario/navbar/navbar_veterinario.dart';
+import 'package:vet_smart_ids/providers/cita_provider.dart';
+import 'package:vet_smart_ids/models/cita.dart';
 
 class GestureEditar
     extends
@@ -25,38 +28,346 @@ class _EditarCitaPageState
         State<
           GestureEditar
         > {
-  // Controladores inicializados con datos de ejemplo
-  final TextEditingController dateController = TextEditingController(
-    text: "Lunes, 20 de Mayo de 2024",
-  );
-  final TextEditingController timeController = TextEditingController(
-    text: "10:30 AM",
-  );
-  final TextEditingController reasonController = TextEditingController(
-    text: "Chequeo anual y vacunación",
-  );
-  final TextEditingController notesController = TextEditingController(
-    text: "Max ha estado un poco decaído últimamente y ha perdido el apetito. Traer muestra de heces para análisis. Recordar revisar la cadera izquierda, mostró sensibilidad al tacto.",
-  );
+  final _formKey =
+      GlobalKey<
+        FormState
+      >();
+  final TextEditingController _motivoController = TextEditingController();
+  final TextEditingController _descripcionController = TextEditingController();
+  final TextEditingController _notasController = TextEditingController();
 
-  String selectedVet = "Dr. Carlos Rodriguez";
-  // Lista de veterinarios disponibles para el dropdown
+  DateTime? _fechaSeleccionada;
+  TimeOfDay? _horaSeleccionada;
+  String _estadoSeleccionado = 'Pendiente';
+
+  bool _isLoading = false;
+
+  // Estados disponibles con íconos y colores
   final List<
-    String
+    Map<
+      String,
+      dynamic
+    >
   >
-  vets = [
-    "Dra. Andy Torres",
-    "Dr. Carlos Rodriguez",
-    "Dra. Ana Martinez",
-    "Dr. Juan Perez",
+  _estados = [
+    {
+      'nombre': 'Pendiente',
+      'icono': Icons.schedule,
+      'color': Colors.orange,
+    },
+    {
+      'nombre': 'Realizada',
+      'icono': Icons.check_circle,
+      'color': Colors.green,
+    },
+    {
+      'nombre': 'Cancelada',
+      'icono': Icons.cancel,
+      'color': Colors.red,
+    },
   ];
 
-  int currentIndex = 2; // Índice de la pestaña 'Citas' en el BottomNavigationBar
+  @override
+  void initState() {
+    super.initState();
+    // Cargar datos de la cita seleccionada
+    WidgetsBinding.instance.addPostFrameCallback(
+      (
+        _,
+      ) {
+        final cita = context
+            .read<
+              CitaProvider
+            >()
+            .citaSeleccionada;
+        if (cita !=
+            null) {
+          setState(
+            () {
+              _fechaSeleccionada = cita.fechaHora;
+              _horaSeleccionada = TimeOfDay.fromDateTime(
+                cita.fechaHora,
+              );
+              _motivoController.text = cita.motivo;
+              _descripcionController.text =
+                  cita.citaDescripcion ??
+                  '';
+              _notasController.text =
+                  cita.notas ??
+                  '';
+              _estadoSeleccionado = cita.estado;
+            },
+          );
+        }
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _motivoController.dispose();
+    _descripcionController.dispose();
+    _notasController.dispose();
+    super.dispose();
+  }
+
+  Future<
+    void
+  >
+  _seleccionarFecha() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate:
+          _fechaSeleccionada ??
+          DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(
+        const Duration(
+          days: 365,
+        ),
+      ),
+    );
+    if (picked !=
+        null) {
+      setState(
+        () {
+          _fechaSeleccionada = picked;
+        },
+      );
+    }
+  }
+
+  Future<
+    void
+  >
+  _seleccionarHora() async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime:
+          _horaSeleccionada ??
+          TimeOfDay.now(),
+    );
+    if (picked !=
+        null) {
+      setState(
+        () {
+          _horaSeleccionada = picked;
+        },
+      );
+    }
+  }
+
+  String _formatFecha(
+    DateTime? fecha,
+  ) {
+    if (fecha ==
+        null)
+      return 'Seleccionar fecha';
+    final meses = [
+      '',
+      'Ene',
+      'Feb',
+      'Mar',
+      'Abr',
+      'May',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dic',
+    ];
+    final dias = [
+      '',
+      'Lun',
+      'Mar',
+      'Mié',
+      'Jue',
+      'Vie',
+      'Sáb',
+      'Dom',
+    ];
+    return '${dias[fecha.weekday]}, ${fecha.day} de ${meses[fecha.month]} de ${fecha.year}';
+  }
+
+  String _formatHora(
+    TimeOfDay? hora,
+  ) {
+    if (hora ==
+        null)
+      return 'Seleccionar hora';
+    final hour =
+        hora.hourOfPeriod ==
+            0
+        ? 12
+        : hora.hourOfPeriod;
+    final minute = hora.minute.toString().padLeft(
+      2,
+      '0',
+    );
+    final period =
+        hora.period ==
+            DayPeriod.am
+        ? 'AM'
+        : 'PM';
+    return '$hour:$minute $period';
+  }
+
+  Future<
+    void
+  >
+  _guardarCambios() async {
+    if (_formKey.currentState!.validate()) {
+      if (_fechaSeleccionada ==
+          null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Por favor selecciona una fecha',
+            ),
+          ),
+        );
+        return;
+      }
+      if (_horaSeleccionada ==
+          null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Por favor selecciona una hora',
+            ),
+          ),
+        );
+        return;
+      }
+
+      setState(
+        () => _isLoading = true,
+      );
+
+      final citaProvider = context
+          .read<
+            CitaProvider
+          >();
+      final citaActual = citaProvider.citaSeleccionada;
+
+      if (citaActual ==
+              null ||
+          citaActual.citaId ==
+              null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Error: No se encontró la cita a editar',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        setState(
+          () => _isLoading = false,
+        );
+        return;
+      }
+
+      // Combinar fecha y hora
+      final fechaHora = DateTime(
+        _fechaSeleccionada!.year,
+        _fechaSeleccionada!.month,
+        _fechaSeleccionada!.day,
+        _horaSeleccionada!.hour,
+        _horaSeleccionada!.minute,
+      );
+
+      final citaActualizada = Cita(
+        citaId: citaActual.citaId,
+        mascotaId: citaActual.mascotaId,
+        usuarioId: citaActual.usuarioId,
+        veterinarioId: citaActual.veterinarioId,
+        fechaHora: fechaHora,
+        motivo: _motivoController.text.trim(),
+        citaDescripcion: _descripcionController.text.trim().isEmpty
+            ? null
+            : _descripcionController.text.trim(),
+        notas: _notasController.text.trim().isEmpty
+            ? null
+            : _notasController.text.trim(),
+        estado: _estadoSeleccionado,
+      );
+
+      final success = await citaProvider.updateCita(
+        citaActual.citaId!,
+        citaActualizada,
+      );
+
+      setState(
+        () => _isLoading = false,
+      );
+
+      if (!mounted) return;
+
+      if (success) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Cita actualizada exitosamente',
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+        // Recargar las citas del día
+        await citaProvider.loadCitasDelDia();
+        if (mounted) context.pop();
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(
+          SnackBar(
+            content: Text(
+              citaProvider.errorMessage ??
+                  'Error al actualizar la cita',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(
     BuildContext context,
   ) {
+    final citaProvider = context
+        .watch<
+          CitaProvider
+        >();
+    final cita = citaProvider.citaSeleccionada;
+
+    if (cita ==
+        null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text(
+            'Editar Cita',
+          ),
+        ),
+        body: const Center(
+          child: Text(
+            'No se encontró información de la cita',
+          ),
+        ),
+      );
+    }
+
     final isDark =
         Theme.of(
           context,
@@ -64,26 +375,18 @@ class _EditarCitaPageState
         Brightness.dark;
 
     return Scaffold(
-      // Determina el color de fondo según el tema
       backgroundColor: isDark
           ? AppColors.textLight
           : AppColors.backgroundLight,
       appBar: AppBar(
-        // AppBar con transparencia
-        backgroundColor:
-            (isDark
-                    ? AppColors.textLight
-                    : AppColors.backgroundLight)
-                .withOpacity(
-                  0.8,
-                ),
+        backgroundColor: isDark
+            ? AppColors.textLight.withValues(
+                alpha: 0.8,
+              )
+            : AppColors.backgroundLight.withValues(
+                alpha: 0.8,
+              ),
         elevation: 0,
-        title: const Text(
-          "Editar Cita",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
         centerTitle: true,
         leading: IconButton(
           icon: Icon(
@@ -94,66 +397,80 @@ class _EditarCitaPageState
           ),
           onPressed: () => context.pop(),
         ),
+        title: Text(
+          'Editar Cita',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: isDark
+                ? AppColors.white
+                : AppColors.black,
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(
           16,
         ),
-        child: Column(
-          children: [
-            Container(
-              // Contenedor principal del formulario con sombra
-              decoration: BoxDecoration(
-                color: isDark
-                    ? AppColors.textLight
-                    : AppColors.cardLight,
-                borderRadius: BorderRadius.circular(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Información de la mascota
+              Container(
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppColors.textLight
+                      : AppColors.cardLight,
+                  borderRadius: BorderRadius.circular(
+                    24,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: isDark
+                          ? Colors.black26
+                          : AppColors.black05,
+                      blurRadius: 10,
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.all(
                   24,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: isDark
-                        ? Colors.black26
-                        : AppColors.black05, // Uso de black05 para sombra clara
-                    blurRadius: 10,
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.all(
-                24,
-              ),
-              child: Column(
-                children: [
-                  // Muestra la información de la mascota
-                  Row(
-                    children: [
-                      Container(
-                        width: 64,
-                        height: 64,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(
-                            0.2,
-                          ),
-                          shape: BoxShape.circle,
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(
-                            9999,
-                          ),
-                          child: Image.network(
-                            'https://lh3.googleusercontent.com/aida-public/AB6AXuBQWtZBWDo8FaFdszSnQZ1A1sz5LOz27ekmfaJiFeaWWld8DosqR5HWTG7CvKd4SHkqf6U8NupB41JAewX6eU_jCFIazCf65dfH6DDo9EFPSgG4aSRkGE6qgRgS4qKcvGe4w42QS3VflJqm3AULCJRs5FVofXS6N36V9uAPOCyLWv946ROYgj1GFZEHkMsBsbeL5Gozo_sJZhsDSa06_dctXmhwnswjjg_m_XDaBbditOqYMxpXn7OTjIZYLjFSAPo5K45EkcVGrjk',
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(
-                        width: 16,
-                      ),
-                      Column(
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 32,
+                      backgroundColor: AppColors.primary20,
+                      backgroundImage:
+                          cita.mascotaFotoUrl !=
+                                  null &&
+                              cita.mascotaFotoUrl!.isNotEmpty
+                          ? NetworkImage(
+                              cita.mascotaFotoUrl!,
+                            )
+                          : null,
+                      child:
+                          cita.mascotaFotoUrl ==
+                                  null ||
+                              cita.mascotaFotoUrl!.isEmpty
+                          ? Icon(
+                              Icons.pets,
+                              color: AppColors.primary,
+                              size: 32,
+                            )
+                          : null,
+                    ),
+                    const SizedBox(
+                      width: 16,
+                    ),
+                    Expanded(
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "Max",
+                            cita.mascotaNombre ??
+                                'Mascota',
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
@@ -162,291 +479,380 @@ class _EditarCitaPageState
                                   : AppColors.textLight,
                             ),
                           ),
-                          Text(
-                            "Golden Retriever",
-                            style: TextStyle(
-                              color: isDark
-                                  ? AppColors.slate600Light.withOpacity(
-                                      0.7,
-                                    )
-                                  : AppColors.slate600Light,
+                          if (cita.usuarioNombre !=
+                              null)
+                            Text(
+                              'Dueño: ${cita.usuarioNombre}',
+                              style: TextStyle(
+                                color: isDark
+                                    ? AppColors.slate600Light.withValues(
+                                        alpha: 0.7,
+                                      )
+                                    : AppColors.slate600Light,
+                              ),
                             ),
-                          ),
                         ],
                       ),
-                    ],
-                  ),
-                  const SizedBox(
-                    height: 24,
-                  ),
-
-                  // Campos del formulario para editar la cita
-                  _buildInputField(
-                    context,
-                    controller: dateController,
-                    label: "Fecha",
-                    icon: Icons.calendar_month,
-                  ),
-                  const SizedBox(
-                    height: 16,
-                  ),
-                  _buildInputField(
-                    context,
-                    controller: timeController,
-                    label: "Hora",
-                    icon: Icons.schedule,
-                  ),
-                  const SizedBox(
-                    height: 16,
-                  ),
-                  _buildInputField(
-                    context,
-                    controller: reasonController,
-                    label: "Motivo de la consulta",
-                    icon: Icons.medical_services,
-                  ),
-                  const SizedBox(
-                    height: 16,
-                  ),
-                  _buildDropdown(
-                    context,
-                    label: "Veterinario Asignado",
-                    icon: Icons.person,
-                    value: selectedVet,
-                    options: vets,
-                    onChanged:
-                        (
-                          value,
-                        ) {
-                          setState(
-                            () {
-                              selectedVet = value!; // Actualiza el veterinario seleccionado
-                            },
-                          );
-                        },
-                  ),
-                  const SizedBox(
-                    height: 16,
-                  ),
-                  _buildTextArea(
-                    context,
-                    controller: notesController,
-                    label: "Notas Adicionales",
-                    icon: Icons.description,
-                    rows: 4,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(
-              height: 24,
-            ),
-            // Botón para guardar las modificaciones
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  // Lógica para guardar la cita y posibles validaciones
-                  debugPrint(
-                    "Editando cita...",
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 14,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(
-                      16,
                     ),
-                  ),
-                ),
-                child: const Text(
-                  "Guardar Cambios",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
+                  ],
                 ),
               ),
-            ),
-            const SizedBox(
-              height: 80,
-            ), // Espacio para que el nav bar no cubra contenido
-          ],
-        ),
-      ),
-      // Componente de navegación inferior
-      bottomNavigationBar: const VetNavbar(
-        currentRoute: '/agenda_citas',
-      ),
-    );
-  }
+              const SizedBox(
+                height: 24,
+              ),
 
-  // Widget para campos de texto de una sola línea
-  Widget _buildInputField(
-    BuildContext context, {
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-  }) {
-    final isDark =
-        Theme.of(
-          context,
-        ).brightness ==
-        Brightness.dark;
-    return TextField(
-      controller: controller,
-      decoration: InputDecoration(
-        prefixIcon: Icon(
-          icon,
-          color: isDark
-              ? AppColors.white
-              : AppColors.slate600Light,
-        ),
-        labelText: label,
-        labelStyle: TextStyle(
-          color: isDark
-              ? AppColors.white
-              : AppColors.slate600Light,
-          fontWeight: FontWeight.w500,
-        ),
-        filled: true,
-        fillColor: isDark
-            ? AppColors.textLight
-            : AppColors.backgroundLight,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(
-            12,
-          ),
-          borderSide: BorderSide(
-            color: AppColors.slateBorder,
-          ),
-        ),
-      ),
-    );
-  }
+              // Selector de Estado (Creativo)
+              Text(
+                'Estado de la Cita',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isDark
+                      ? AppColors.white
+                      : AppColors.textLight,
+                ),
+              ),
+              const SizedBox(
+                height: 12,
+              ),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: _estados.map(
+                  (
+                    estado,
+                  ) {
+                    final isSelected =
+                        _estadoSeleccionado ==
+                        estado['nombre'];
+                    return InkWell(
+                      onTap: () {
+                        setState(
+                          () {
+                            _estadoSeleccionado = estado['nombre'];
+                          },
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(
+                        16,
+                      ),
+                      child: AnimatedContainer(
+                        duration: const Duration(
+                          milliseconds: 200,
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? estado['color'].withValues(
+                                  alpha: 0.15,
+                                )
+                              : (isDark
+                                    ? AppColors.textLight
+                                    : AppColors.cardLight),
+                          borderRadius: BorderRadius.circular(
+                            16,
+                          ),
+                          border: Border.all(
+                            color: isSelected
+                                ? estado['color']
+                                : AppColors.slateBorder,
+                            width: isSelected
+                                ? 2.5
+                                : 1.5,
+                          ),
+                          boxShadow: isSelected
+                              ? [
+                                  BoxShadow(
+                                    color: estado['color'].withValues(
+                                      alpha: 0.3,
+                                    ),
+                                    blurRadius: 8,
+                                    offset: const Offset(
+                                      0,
+                                      2,
+                                    ),
+                                  ),
+                                ]
+                              : [],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              estado['icono'],
+                              color: isSelected
+                                  ? estado['color']
+                                  : (isDark
+                                        ? AppColors.white
+                                        : AppColors.slate600Light),
+                              size: 20,
+                            ),
+                            const SizedBox(
+                              width: 8,
+                            ),
+                            Text(
+                              estado['nombre'],
+                              style: TextStyle(
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.w600,
+                                color: isSelected
+                                    ? estado['color']
+                                    : (isDark
+                                          ? AppColors.white
+                                          : AppColors.textLight),
+                                fontSize: 15,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ).toList(),
+              ),
+              const SizedBox(
+                height: 24,
+              ),
 
-  // Widget para áreas de texto multi-línea
-  Widget _buildTextArea(
-    BuildContext context, {
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    required int rows,
-  }) {
-    final isDark =
-        Theme.of(
-          context,
-        ).brightness ==
-        Brightness.dark;
-    return TextField(
-      controller: controller,
-      maxLines: rows,
-      decoration: InputDecoration(
-        // Ajuste de padding para el ícono en textareas
-        prefixIcon: Padding(
-          padding: const EdgeInsets.only(
-            top: 12,
-          ),
-          child: Icon(
-            icon,
-            color: isDark
-                ? AppColors.white
-                : AppColors.slate600Light,
-          ),
-        ),
-        labelText: label,
-        labelStyle: TextStyle(
-          color: isDark
-              ? AppColors.white
-              : AppColors.slate600Light,
-          fontWeight: FontWeight.w500,
-        ),
-        filled: true,
-        fillColor: isDark
-            ? AppColors.textLight
-            : AppColors.backgroundLight,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(
-            12,
-          ),
-          borderSide: BorderSide(
-            color: AppColors.slateBorder,
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Widget para el campo de selección (Dropdown)
-  Widget _buildDropdown(
-    BuildContext context, {
-    required String label,
-    required IconData icon,
-    required String value,
-    required List<
-      String
-    >
-    options,
-    required ValueChanged<
-      String?
-    >
-    onChanged,
-  }) {
-    final isDark =
-        Theme.of(
-          context,
-        ).brightness ==
-        Brightness.dark;
-    return InputDecorator(
-      decoration: InputDecoration(
-        prefixIcon: Icon(
-          icon,
-          color: isDark
-              ? AppColors.white
-              : AppColors.slate600Light,
-        ),
-        labelText: label,
-        labelStyle: TextStyle(
-          color: isDark
-              ? AppColors.white
-              : AppColors.slate600Light,
-          fontWeight: FontWeight.w500,
-        ),
-        filled: true,
-        fillColor: isDark
-            ? AppColors.textLight
-            : AppColors.backgroundLight,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(
-            12,
-          ),
-        ),
-      ),
-      child: DropdownButtonHideUnderline(
-        child:
-            DropdownButton<
-              String
-            >(
-              value: value,
-              isExpanded: true,
-              onChanged: onChanged,
-              // Mapea la lista de opciones a DropdownMenuItem
-              items: options
-                  .map(
-                    (
-                      opt,
-                    ) => DropdownMenuItem(
-                      value: opt,
-                      child: Text(
-                        opt,
+              // Campo: Fecha
+              InkWell(
+                onTap: _seleccionarFecha,
+                child: InputDecorator(
+                  decoration: InputDecoration(
+                    labelText: 'Fecha',
+                    prefixIcon: const Icon(
+                      Icons.calendar_month,
+                    ),
+                    filled: true,
+                    fillColor: isDark
+                        ? AppColors.textLight
+                        : AppColors.backgroundLight,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(
+                        12,
+                      ),
+                      borderSide: BorderSide(
+                        color: AppColors.slateBorder,
                       ),
                     ),
-                  )
-                  .toList(),
-            ),
+                  ),
+                  child: Text(
+                    _formatFecha(
+                      _fechaSeleccionada,
+                    ),
+                    style: TextStyle(
+                      fontSize: 16,
+                      color:
+                          _fechaSeleccionada ==
+                              null
+                          ? AppColors.slate500Light
+                          : (isDark
+                                ? AppColors.white
+                                : AppColors.textLight),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(
+                height: 16,
+              ),
+
+              // Campo: Hora
+              InkWell(
+                onTap: _seleccionarHora,
+                child: InputDecorator(
+                  decoration: InputDecoration(
+                    labelText: 'Hora',
+                    prefixIcon: const Icon(
+                      Icons.schedule,
+                    ),
+                    filled: true,
+                    fillColor: isDark
+                        ? AppColors.textLight
+                        : AppColors.backgroundLight,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(
+                        12,
+                      ),
+                      borderSide: BorderSide(
+                        color: AppColors.slateBorder,
+                      ),
+                    ),
+                  ),
+                  child: Text(
+                    _formatHora(
+                      _horaSeleccionada,
+                    ),
+                    style: TextStyle(
+                      fontSize: 16,
+                      color:
+                          _horaSeleccionada ==
+                              null
+                          ? AppColors.slate500Light
+                          : (isDark
+                                ? AppColors.white
+                                : AppColors.textLight),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(
+                height: 16,
+              ),
+
+              // Campo: Motivo
+              TextFormField(
+                controller: _motivoController,
+                decoration: InputDecoration(
+                  labelText: 'Motivo de la consulta',
+                  prefixIcon: const Icon(
+                    Icons.medical_services,
+                  ),
+                  filled: true,
+                  fillColor: isDark
+                      ? AppColors.textLight
+                      : AppColors.backgroundLight,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      12,
+                    ),
+                    borderSide: BorderSide(
+                      color: AppColors.slateBorder,
+                    ),
+                  ),
+                ),
+                validator:
+                    (
+                      value,
+                    ) {
+                      if (value ==
+                              null ||
+                          value.trim().isEmpty) {
+                        return 'Ingresa el motivo de la consulta';
+                      }
+                      return null;
+                    },
+              ),
+              const SizedBox(
+                height: 16,
+              ),
+
+              // Campo: Descripción
+              TextFormField(
+                controller: _descripcionController,
+                maxLines: 2,
+                decoration: InputDecoration(
+                  labelText: 'Descripción (opcional)',
+                  prefixIcon: const Padding(
+                    padding: EdgeInsets.only(
+                      top: 12,
+                    ),
+                    child: Icon(
+                      Icons.notes,
+                    ),
+                  ),
+                  alignLabelWithHint: true,
+                  filled: true,
+                  fillColor: isDark
+                      ? AppColors.textLight
+                      : AppColors.backgroundLight,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      12,
+                    ),
+                    borderSide: BorderSide(
+                      color: AppColors.slateBorder,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(
+                height: 16,
+              ),
+
+              // Campo: Notas Adicionales
+              TextFormField(
+                controller: _notasController,
+                maxLines: 4,
+                decoration: InputDecoration(
+                  labelText: 'Notas Adicionales (opcional)',
+                  prefixIcon: const Padding(
+                    padding: EdgeInsets.only(
+                      top: 12,
+                    ),
+                    child: Icon(
+                      Icons.description,
+                    ),
+                  ),
+                  alignLabelWithHint: true,
+                  filled: true,
+                  fillColor: isDark
+                      ? AppColors.textLight
+                      : AppColors.backgroundLight,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      12,
+                    ),
+                    borderSide: BorderSide(
+                      color: AppColors.slateBorder,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(
+                height: 24,
+              ),
+
+              // Botón Guardar Cambios
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isLoading
+                      ? null
+                      : _guardarCambios,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.textLight,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 14,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        16,
+                      ),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Guardar Cambios',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                ),
+              ),
+              const SizedBox(
+                height: 80,
+              ),
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: const VetNavbar(
+        currentRoute: '/agenda_citas',
       ),
     );
   }

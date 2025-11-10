@@ -7,6 +7,7 @@ class Cita {
   final String? usuarioNombre;
   final int? veterinarioId;
   final String? veterinarioNombre;
+  final String? veterinarioFotoUrl;
   final DateTime fechaHora;
   final String motivo;
   final String? citaDescripcion;
@@ -22,6 +23,7 @@ class Cita {
     this.usuarioNombre,
     this.veterinarioId,
     this.veterinarioNombre,
+    this.veterinarioFotoUrl,
     required this.fechaHora,
     required this.motivo,
     this.citaDescripcion,
@@ -30,7 +32,9 @@ class Cita {
   });
 
   // Desde JSON (respuesta de la API)
-  // Soporta ambos formatos: lista (GET /api/Citas) y detalle (GET /api/Citas/{id})
+  // GET /api/Citas: incluye todo (IDs, nombres, fotos, descripción, notas)
+  // GET /api/Citas/{id}: incluye todo
+  // POST: requiere IDs
   factory Cita.fromJson(Map<String, dynamic> json) {
     return Cita(
       citaId: json['citaId'],
@@ -41,6 +45,7 @@ class Cita {
       usuarioNombre: json['usuarioNombre'],
       veterinarioId: json['veterinarioId'],
       veterinarioNombre: json['veterinarioNombre'],
+      veterinarioFotoUrl: json['veterinarioFotoUrl'],
       fechaHora: DateTime.parse(json['fechaHora']),
       motivo: json['motivo'] ?? '',
       citaDescripcion: json['citaDescripcion'],

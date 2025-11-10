@@ -328,7 +328,7 @@ class _AppointmentCard extends StatelessWidget {
 
     return InkWell(
       onTap: () {
-        // Seleccionar la cita antes de navegar
+        // Seleccionar la cita y navegar (GET general ya incluye citaDescripcion y notas)
         context.read<CitaProvider>().selectCita(cita);
         context.push('/cita_detalles_veterinario');
       },
