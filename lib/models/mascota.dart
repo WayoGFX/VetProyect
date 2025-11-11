@@ -1,6 +1,7 @@
 class Mascota {
   final int? mascotaId;
   final int usuarioId;
+  final String? usuarioNombre; // Nombre del propietario (solo en GET)
   final String nombre;
   final String especie;
   final String raza;
@@ -11,6 +12,7 @@ class Mascota {
   Mascota({
     this.mascotaId,
     required this.usuarioId,
+    this.usuarioNombre,
     required this.nombre,
     required this.especie,
     required this.raza,
@@ -24,6 +26,7 @@ class Mascota {
     return Mascota(
       mascotaId: json['mascotaId'],
       usuarioId: json['usuarioId'],
+      usuarioNombre: json['usuarioNombre'],
       nombre: json['nombre'],
       especie: json['especie'],
       raza: json['raza'],

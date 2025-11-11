@@ -7,6 +7,7 @@ import 'package:vet_smart_ids/presentation/generales/test_api/test_api_screen.da
 import 'package:vet_smart_ids/presentation/home/home_screen.dart';
 import 'package:vet_smart_ids/presentation/screens.dart';
 import 'package:vet_smart_ids/presentation/veterinario/crear_cita/crear_cita.dart';
+import 'package:vet_smart_ids/presentation/veterinario/editar_expediente/editar_expediente.dart';
 import 'package:vet_smart_ids/presentation/veterinario/ficha_paciente_veterinario/ficha_paciente_veterinario.dart';
 import 'package:vet_smart_ids/presentation/veterinario/lista_pacientes/lista_pacientes.dart';
 import 'package:vet_smart_ids/presentation/veterinario/menu_veterinario/menu_veterinario.dart';
@@ -327,6 +328,17 @@ final appRouter = GoRouter(
             state,
           ) {
             return const VetPatientProfileScreen();
+          },
+    ),
+    GoRoute(
+      path: '/editar_expediente',
+      name: EditarExpedienteWidget.name,
+      builder:
+          (
+            context,
+            state,
+          ) {
+            return const EditarExpedienteWidget();
           },
     ),
   ],

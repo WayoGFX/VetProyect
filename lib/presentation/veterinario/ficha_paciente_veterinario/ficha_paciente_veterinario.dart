@@ -47,6 +47,19 @@ class _VetPatientProfileScreenState extends State<VetPatientProfileScreen> {
           ),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit, size: 24),
+            onPressed: () {
+              final provider = context.read<MascotaProvider>();
+              if (provider.mascotaSeleccionada != null) {
+                context.push('/editar_expediente');
+              }
+            },
+            color: AppColors.primary,
+            tooltip: 'Editar Expediente',
+          ),
+        ],
       ),
       body: Consumer<MascotaProvider>(
         builder: (context, provider, child) {

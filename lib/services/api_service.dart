@@ -74,6 +74,9 @@ class ApiService {
     T Function(Map<String, dynamic>) fromJson,
   ) async {
     try {
+      print('POST to ${ApiConfig.baseUrl}/$endpoint');
+      print('Data: ${json.encode(data)}');
+
       final response = await http
           .post(
             Uri.parse('${ApiConfig.baseUrl}/$endpoint'),
@@ -82,10 +85,13 @@ class ApiService {
           )
           .timeout(ApiConfig.timeout);
 
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         return fromJson(json.decode(response.body));
       } else {
-        throw Exception('Error al crear en $endpoint: ${response.statusCode}');
+        throw Exception('Error al crear en $endpoint: ${response.statusCode}. Respuesta: ${response.body}');
       }
     } catch (e) {
       throw Exception('Error de conexión: $e');
