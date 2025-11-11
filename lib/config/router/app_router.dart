@@ -8,6 +8,7 @@ import 'package:vet_smart_ids/presentation/home/home_screen.dart';
 import 'package:vet_smart_ids/presentation/screens.dart';
 import 'package:vet_smart_ids/presentation/veterinario/crear_cita/crear_cita.dart';
 import 'package:vet_smart_ids/presentation/veterinario/ficha_paciente_veterinario/ficha_paciente_veterinario.dart';
+import 'package:vet_smart_ids/presentation/veterinario/lista_pacientes/lista_pacientes.dart';
 import 'package:vet_smart_ids/presentation/veterinario/menu_veterinario/menu_veterinario.dart';
 import 'package:vet_smart_ids/presentation/veterinario/perfil_veterinarios/perfil_veterinario.dart';
 
@@ -20,9 +21,13 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/role_selection',
       name: RoleSelectionScreen.name,
-      builder: (context, state) {
-        return const RoleSelectionScreen();
-      },
+      builder:
+          (
+            context,
+            state,
+          ) {
+            return const RoleSelectionScreen();
+          },
     ),
     GoRoute(
       path: '/home',
@@ -321,9 +326,7 @@ final appRouter = GoRouter(
             context,
             state,
           ) {
-            return VetPatientProfileScreen(
-              patient: maxData,
-            );
+            return const VetPatientProfileScreen();
           },
     ),
   ],

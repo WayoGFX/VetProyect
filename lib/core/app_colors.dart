@@ -25,12 +25,18 @@ class AppColors {
   static const Color textLight = Color(
     0xFF1E293B,
   ); // text-slate-800 / text-slate-900 (oscuro)
+  static const Color slate400Light = Color(
+    0xFF94A3B8,
+  ); // text-slate-400
   static const Color slate500Light = Color(
     0xFF64748B,
   ); // text-slate-500
   static const Color slate600Light = Color(
     0xFF475569,
   ); // text-slate-600
+  static const Color slate50Light = Color(
+    0xFFF8FAFC,
+  ); // bg-slate-50
 
   // Colores de error
   static const Color dangerText = Color(

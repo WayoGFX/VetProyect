@@ -33,7 +33,6 @@ export 'package:vet_smart_ids/presentation/usuario/cita_detalles_usuario/cita_de
 export 'package:vet_smart_ids/presentation/veterinario/citas_del_dia/citas_del_dia.dart';
 
 // widget de Lista de pacientes - Hamilton
-export 'package:vet_smart_ids/presentation/veterinario/lista_pacientes/lista_pacientes.dart';
 
 //widget de nuevo paciente - Hamilton
 export 'package:vet_smart_ids/presentation/veterinario/nuevo_paciente/nuevo_paciente.dart';

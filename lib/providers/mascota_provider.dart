@@ -1,5 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:vet_smart_ids/models/mascota.dart';
+import 'package:vet_smart_ids/models/paciente_detalle.dart';
+import 'package:vet_smart_ids/models/usuario.dart';
+import 'package:vet_smart_ids/models/cita.dart';
+import 'package:vet_smart_ids/models/vacuna.dart';
+import 'package:vet_smart_ids/models/alergia.dart';
+import 'package:vet_smart_ids/models/mascota_vacuna.dart';
+import 'package:vet_smart_ids/models/mascota_alergia.dart';
+import 'package:vet_smart_ids/models/historial_medico.dart';
 import 'package:vet_smart_ids/services/api_service.dart';
 
 class MascotaProvider extends ChangeNotifier {
@@ -7,12 +15,14 @@ class MascotaProvider extends ChangeNotifier {
 
   List<Mascota> _mascotas = [];
   Mascota? _mascotaSeleccionada;
+  PacienteDetalle? _pacienteDetalle;
   bool _isLoading = false;
   String? _errorMessage;
 
   // Getters
   List<Mascota> get mascotas => _mascotas;
   Mascota? get mascotaSeleccionada => _mascotaSeleccionada;
+  PacienteDetalle? get pacienteDetalle => _pacienteDetalle;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
@@ -141,6 +151,98 @@ class MascotaProvider extends ChangeNotifier {
   /// Limpiar mascota seleccionada
   void clearSelection() {
     _mascotaSeleccionada = null;
+    _pacienteDetalle = null;
     notifyListeners();
+  }
+
+  /// Cargar información completa del paciente (para ficha médica)
+  Future<void> loadPacienteDetalle(int mascotaId) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      // 1. Cargar mascota
+      final mascota = await _apiService.getMascotaById(mascotaId);
+
+      // 2. Cargar dueño
+      final dueno = await _apiService.getUsuarioById(mascota.usuarioId);
+
+      // 3. Cargar vacunas aplicadas
+      final todasMascotasVacunas = await _apiService.getMascotasVacunas();
+      final mascotaVacunas = todasMascotasVacunas
+          .where((mv) => mv.mascotaId == mascotaId)
+          .toList();
+
+      final List<VacunaAplicada> vacunasAplicadas = [];
+      for (var mv in mascotaVacunas) {
+        try {
+          final vacuna = await _apiService.getVacunaById(mv.vacunaId);
+          vacunasAplicadas.add(VacunaAplicada.fromMascotaVacuna(mv, vacuna));
+        } catch (e) {
+          print('Error al cargar vacuna ${mv.vacunaId}: $e');
+        }
+      }
+
+      // 4. Cargar alergias
+      final todasMascotasAlergias = await _apiService.getMascotasAlergias();
+      final mascotaAlergias = todasMascotasAlergias
+          .where((ma) => ma.mascotaId == mascotaId)
+          .toList();
+
+      final List<AlergiaDetalle> alergiasDetalle = [];
+      for (var ma in mascotaAlergias) {
+        try {
+          final alergia = await _apiService.getAlergiaById(ma.alergiaId);
+          alergiasDetalle.add(AlergiaDetalle.fromMascotaAlergia(ma, alergia));
+        } catch (e) {
+          print('Error al cargar alergia ${ma.alergiaId}: $e');
+        }
+      }
+
+      // 5. Cargar citas
+      final todasCitas = await _apiService.getCitas();
+      final citasMascota = todasCitas
+          .where((c) => c.mascotaId == mascotaId)
+          .toList();
+
+      final ahora = DateTime.now();
+      final proximasCitas = citasMascota
+          .where((c) => c.fechaHora.isAfter(ahora))
+          .toList()
+        ..sort((a, b) => a.fechaHora.compareTo(b.fechaHora));
+
+      final citasAnteriores = citasMascota
+          .where((c) => c.fechaHora.isBefore(ahora))
+          .toList()
+        ..sort((a, b) => b.fechaHora.compareTo(a.fechaHora));
+
+      // 6. Cargar historial médico
+      final todosHistoriales = await _apiService.getHistorialesMedicos();
+      final historialMascota = todosHistoriales
+          .where((h) => h.mascotaId == mascotaId)
+          .toList()
+        ..sort((a, b) => b.fechaConsulta.compareTo(a.fechaConsulta));
+
+      // 7. Crear el detalle completo
+      _pacienteDetalle = PacienteDetalle(
+        mascota: mascota,
+        dueno: dueno,
+        vacunas: vacunasAplicadas,
+        alergias: alergiasDetalle,
+        proximasCitas: proximasCitas,
+        citasAnteriores: citasAnteriores,
+        historialMedico: historialMascota,
+      );
+
+      _mascotaSeleccionada = mascota;
+
+    } catch (e) {
+      _errorMessage = e.toString();
+      print('Error al cargar detalle del paciente: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 }
