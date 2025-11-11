@@ -67,6 +67,12 @@ class _CitasDelDiaScreenState extends State<CitasDelDiaScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.backgroundLight.withOpacity(0.8),
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+          ),
+          onPressed: () => context.pop(),
+        ),
         title: Text(
           'VetSmart',
           style: Theme.of(context).textTheme.titleLarge,

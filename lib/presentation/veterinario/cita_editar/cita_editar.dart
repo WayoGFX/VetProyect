@@ -359,6 +359,12 @@ class _EditarCitaPageState
           title: const Text(
             'Editar Cita',
           ),
+          leading: IconButton(
+            icon: const Icon(
+              Icons.arrow_back_ios_new,
+            ),
+            onPressed: () => context.pop(),
+          ),
         ),
         body: const Center(
           child: Text(

@@ -102,7 +102,7 @@ class ListaPacientes
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(
-            Icons.arrow_back,
+            Icons.arrow_back_ios_new,
           ),
           onPressed: () => context.pop(),
         ),

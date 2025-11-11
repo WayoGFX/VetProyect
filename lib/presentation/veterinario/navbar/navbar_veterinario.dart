@@ -92,10 +92,12 @@ class VetNavbar
 
             return GestureDetector(
               onTap: () {
-                // Navega a la ruta usando GoRouter
-                context.go(
-                  item.route,
-                );
+                // Navega a la ruta usando GoRouter con push para mantener el stack
+                if (item.route != currentRoute) {
+                  context.push(
+                    item.route,
+                  );
+                }
               },
               child: Column(
                 mainAxisSize: MainAxisSize.min, // minimo vertical

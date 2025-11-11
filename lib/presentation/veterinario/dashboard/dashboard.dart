@@ -22,6 +22,12 @@ class Dashboard extends StatelessWidget {
             ? AppColors.black.withOpacity(0.8)
             : AppColors.backgroundLight.withOpacity(0.8),
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+          ),
+          onPressed: () => context.pop(),
+        ),
         centerTitle: true,
         actions: [
           IconButton(

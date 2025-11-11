@@ -63,7 +63,7 @@ class _VetAppointmentScreenState extends State<VetAppointmentScreen> {
         automaticallyImplyLeading: false,
         toolbarHeight: 56,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, size: 24),
+          icon: const Icon(Icons.arrow_back_ios_new),
           onPressed: () => context.pop(),
           color: AppColors.textLight,
         ),

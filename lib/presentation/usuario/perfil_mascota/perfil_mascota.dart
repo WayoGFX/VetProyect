@@ -79,9 +79,9 @@ class _PerfilMascotaScreenState
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(
-            Icons.arrow_back,
+            Icons.arrow_back_ios_new,
           ),
-          onPressed: () => context.pop(), // Vuelve atras
+          onPressed: () => context.pop(), // Vuelve a la lista de mascotas
         ),
         title: const Text(
           'Perfil de la Mascota',

@@ -62,7 +62,7 @@ class ChatScreen
         toolbarHeight: 56, // Ajuste para que no use el toolbarHeight
         leading: IconButton(
           icon: const Icon(
-            Icons.arrow_back,
+            Icons.arrow_back_ios_new,
           ), // Icono de flecha
           onPressed: () => context.pop(),
           color: AppColors.textLight, // text-gray-800

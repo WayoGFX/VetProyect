@@ -35,7 +35,7 @@ class PatientProfileScreen
         toolbarHeight: 56,
         leading: IconButton(
           icon: const Icon(
-            Icons.arrow_back,
+            Icons.arrow_back_ios_new,
             size: 24,
           ),
           onPressed: () => context.pop(),
