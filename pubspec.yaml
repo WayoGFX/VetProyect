@@ -42,6 +42,7 @@ dependencies:
   # Gestión de estado y peticiones HTTP
   provider: ^6.1.2 # Gestión de estado
   http: ^1.2.2 # Peticiones HTTP a la API
+  intl: ^0.20.2 # Internacionalización y formateo de fechas
 
 dev_dependencies:
   flutter_test:

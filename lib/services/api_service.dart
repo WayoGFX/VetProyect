@@ -25,7 +25,7 @@ class ApiService {
     try {
       final response = await http
           .get(
-            Uri.parse('${ApiConfig.baseUrl}/$endpoint'),
+            Uri.parse('${ApiConfig.baseUrl}$endpoint'),
             headers: ApiConfig.headers,
           )
           .timeout(ApiConfig.timeout);
@@ -50,7 +50,7 @@ class ApiService {
     try {
       final response = await http
           .get(
-            Uri.parse('${ApiConfig.baseUrl}/$endpoint/$id'),
+            Uri.parse('${ApiConfig.baseUrl}$endpoint/$id'),
             headers: ApiConfig.headers,
           )
           .timeout(ApiConfig.timeout);
@@ -74,24 +74,58 @@ class ApiService {
     T Function(Map<String, dynamic>) fromJson,
   ) async {
     try {
-      print('POST to ${ApiConfig.baseUrl}/$endpoint');
+      final url = '${ApiConfig.baseUrl}$endpoint';
+      print('POST to $url');
       print('Data: ${json.encode(data)}');
 
-      final response = await http
-          .post(
-            Uri.parse('${ApiConfig.baseUrl}/$endpoint'),
-            headers: ApiConfig.headers,
-            body: json.encode(data),
-          )
-          .timeout(ApiConfig.timeout);
+      final client = http.Client();
+      
+      try {
+        // Enviar POST
+        final response = await client
+            .post(
+              Uri.parse(url),
+              headers: ApiConfig.headers,
+              body: json.encode(data),
+            )
+            .timeout(ApiConfig.timeout);
 
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
+        print('Response status: ${response.statusCode}');
+        print('Response body: ${response.body}');
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return fromJson(json.decode(response.body));
-      } else {
-        throw Exception('Error al crear en $endpoint: ${response.statusCode}. Respuesta: ${response.body}');
+        // Si es 307, 301, 302 - es un redirect temporal/permanente
+        if (response.statusCode == 307 || response.statusCode == 301 || response.statusCode == 302) {
+          // Extraer la nueva ubicación del header
+          final newLocation = response.headers['location'];
+          print('Redirect detected to: $newLocation');
+          
+          if (newLocation != null) {
+            // Intentar con la nueva URL
+            print('Siguiendo redirect a: $newLocation');
+            final redirectResponse = await client
+                .post(
+                  Uri.parse(newLocation),
+                  headers: ApiConfig.headers,
+                  body: json.encode(data),
+                )
+                .timeout(ApiConfig.timeout);
+            
+            print('Redirect response status: ${redirectResponse.statusCode}');
+            print('Redirect response body: ${redirectResponse.body}');
+            
+            if (redirectResponse.statusCode == 200 || redirectResponse.statusCode == 201) {
+              return fromJson(json.decode(redirectResponse.body));
+            }
+          }
+        }
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          return fromJson(json.decode(response.body));
+        } else {
+          throw Exception('Error al crear en $endpoint: ${response.statusCode}. Respuesta: ${response.body}');
+        }
+      } finally {
+        client.close();
       }
     } catch (e) {
       throw Exception('Error de conexión: $e');
@@ -107,7 +141,7 @@ class ApiService {
     try {
       final response = await http
           .put(
-            Uri.parse('${ApiConfig.baseUrl}/$endpoint/$id'),
+            Uri.parse('${ApiConfig.baseUrl}$endpoint/$id'),
             headers: ApiConfig.headers,
             body: json.encode(data),
           )
@@ -127,7 +161,7 @@ class ApiService {
     try {
       final response = await http
           .delete(
-            Uri.parse('${ApiConfig.baseUrl}/$endpoint/$id'),
+            Uri.parse('${ApiConfig.baseUrl}$endpoint/$id'),
             headers: ApiConfig.headers,
           )
           .timeout(ApiConfig.timeout);

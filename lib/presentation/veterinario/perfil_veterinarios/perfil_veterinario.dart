@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:vet_smart_ids/core/app_colors.dart';
+import 'package:vet_smart_ids/models/veterinario.dart';
 import 'package:vet_smart_ids/presentation/veterinario/navbar/navbar_veterinario.dart';
+import 'package:vet_smart_ids/providers/veterinario_provider.dart';
 
 // Pantalla principal para editar el perfil del usuario.
 // Es StatefulWidget para gestionar los TextEditingController.
@@ -31,23 +34,29 @@ class _PerfilUsuarioScreenState
   late final TextEditingController _phoneController;
   late final TextEditingController _emailController;
   late final TextEditingController _addressController;
+  bool _isSaving = false;
 
-  // Inicializa los controladores con datos mock
+  // Inicializa los controladores con datos del veterinario logeado
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(
-      text: 'Ana García',
-    );
-    _phoneController = TextEditingController(
-      text: '+34 612 345 678',
-    );
-    _emailController = TextEditingController(
-      text: 'ana.garcia@email.com',
-    );
-    _addressController = TextEditingController(
-      text: 'Calle de la Alegría, 123, Madrid',
-    );
+    _nameController = TextEditingController();
+    _phoneController = TextEditingController();
+    _emailController = TextEditingController();
+    _addressController = TextEditingController();
+    
+    // Cargar datos del veterinario logeado en el siguiente frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final veterinarioProvider = context.read<VeterinarioProvider>();
+      final veterinario = veterinarioProvider.veterinarioActual;
+      
+      if (veterinario != null) {
+        _nameController.text = veterinario.nombreCompleto;
+        _phoneController.text = veterinario.telefono;
+        _emailController.text = veterinario.email;
+        _addressController.text = veterinario.especialidad;
+      }
+    });
   }
 
   // Elimina los controladores para liberar memoria cuando el widget se destruye
@@ -60,163 +69,253 @@ class _PerfilUsuarioScreenState
     super.dispose();
   }
 
+  /// Guardar cambios del perfil en la API
+  Future<void> _guardarCambios() async {
+    final veterinarioProvider = context.read<VeterinarioProvider>();
+    final veterinarioActual = veterinarioProvider.veterinarioActual;
+    
+    if (veterinarioActual == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error: No hay veterinario logeado')),
+      );
+      return;
+    }
+
+    // Validar que los campos no estén vacíos
+    if (_nameController.text.isEmpty ||
+        _phoneController.text.isEmpty ||
+        _emailController.text.isEmpty ||
+        _addressController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error: Todos los campos son requeridos')),
+      );
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
+    try {
+      // Crear veterinario actualizado con los nuevos datos
+      final veterinarioActualizado = Veterinario(
+        veterinarioId: veterinarioActual.veterinarioId,
+        nombreCompleto: _nameController.text,
+        email: _emailController.text,
+        passwordHash: veterinarioActual.passwordHash,
+        telefono: _phoneController.text,
+        especialidad: _addressController.text,
+        fotoUrl: veterinarioActual.fotoUrl,
+      );
+
+      // Realizar la actualización en la API
+      final resultado = await veterinarioProvider.updateVeterinario(
+        veterinarioActual.veterinarioId!,
+        veterinarioActualizado,
+      );
+
+      if (mounted) {
+        setState(() => _isSaving = false);
+        
+        if (resultado) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Cambios guardados exitosamente'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error al guardar: ${veterinarioProvider.errorMessage}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(
     BuildContext context,
   ) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new,
-          ),
-          onPressed: () => context.pop(),
-        ),
-        title: const Text(
-          'Perfil de Veterinario',
-        ),
-        centerTitle: true,
-      ),
-      // Permite el desplazamiento de todo el contenido
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(
-          16.0,
-        ),
-        child: Column(
-          children: [
-            const SizedBox(
-              height: 20,
+    return Consumer<VeterinarioProvider>(
+      builder: (context, veterinarioProvider, _) {
+        final veterinario = veterinarioProvider.veterinarioActual;
+        
+        return Scaffold(
+          appBar: AppBar(
+            leading: IconButton(
+              icon: const Icon(
+                Icons.arrow_back_ios_new,
+              ),
+              onPressed: () => context.pop(),
             ),
-            // Stack para superponer el avatar y el botón de la cámara
-            Stack(
+            title: const Text(
+              'Perfil de Veterinario',
+            ),
+            centerTitle: true,
+          ),
+          // Permite el desplazamiento de todo el contenido
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(
+              16.0,
+            ),
+            child: Column(
               children: [
-                const CircleAvatar(
-                  radius: 56,
-                  backgroundImage: NetworkImage(
-                    'https://lh3.googleusercontent.com/aida-public/AB6AXuAy0Ha1zDbjCEt5BqmubRoX995XzAROhGJoNU87jSnzfP0yKm6otfPa8ejTNbRdQ9g2K0L_UykBNB_1dIBk868gzF2yTuFeqLp6qFtzi6WrdK4itesUYXCUaUfisGzPBIw2z5H-oAoLmVaMLcXNJgZj5Gt9LE-bCyM8RjkzMpQPKsMq4PeEk3FOUhnlejB7SQsdLz2Wq8MLU7zlSggWkiuFqGe0pvv7sQ-H7XK5DZk31Hq3mAc_myii6j17gf7FyfR5mJ2MOFtsQ9o',
-                  ),
+                const SizedBox(
+                  height: 20,
                 ),
-                // Botón de cámara posicionado en la esquina inferior derecha
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.black05,
-                          spreadRadius: 1,
-                          blurRadius: 3,
+                // Stack para superponer el avatar y el botón de la cámara
+                Stack(
+                  children: [
+                    CircleAvatar(
+                      radius: 56,
+                      backgroundImage: veterinario?.fotoUrl != null
+                          ? NetworkImage(veterinario!.fotoUrl!)
+                          : const NetworkImage(
+                              'https://lh3.googleusercontent.com/aida-public/AB6AXuAy0Ha1zDbjCEt5BqmubRoX995XzAROhGJoNU87jSnzfP0yKm6otfPa8ejTNbRdQ9g2K0L_UykBNB_1dIBk868gzF2yTuFeqLp6qFtzi6WrdK4itesUYXCUaUfisGzPBIw2z5H-oAoLmVaMLcXNJgZj5Gt9LE-bCyM8RjkzMpQPKsMq4PeEk3FOUhnlejB7SQsdLz2Wq8MLU7zlSggWkiuFqGe0pvv7sQ-H7XK5DZk31Hq3mAc_myii6j17gf7FyfR5mJ2MOFtsQ9o',
+                            ),
+                      backgroundColor: AppColors.slate50Light,
+                    ),
+                    // Botón de cámara posicionado en la esquina inferior derecha
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.black05,
+                              spreadRadius: 1,
+                              blurRadius: 3,
+                            ),
+                          ],
+                        ),
+                        child: const Padding(
+                          padding: EdgeInsets.all(
+                            8.0,
+                          ),
+                          child: Icon(
+                            Icons.photo_camera,
+                            color: AppColors.textLight,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(
+                  height: 24,
+                ),
+                // Tarjeta que contiene los campos de formulario
+                Card(
+                  elevation: 2,
+                  shadowColor: AppColors.black05,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(
+                      16.0,
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(
+                      24.0,
+                    ),
+                    child: Column(
+                      children: [
+                        // Campo Nombre
+                        _UserInfoTextField(
+                          label: 'Nombre',
+                          icon: Icons.person,
+                          controller: _nameController,
+                        ),
+                        const SizedBox(
+                          height: 16,
+                        ),
+                        // Campo Teléfono
+                        _UserInfoTextField(
+                          label: 'Teléfono',
+                          icon: Icons.phone,
+                          controller: _phoneController,
+                        ),
+                        const SizedBox(
+                          height: 16,
+                        ),
+                        // Campo Correo Electrónico
+                        _UserInfoTextField(
+                          label: 'Correo Electrónico',
+                          icon: Icons.email,
+                          controller: _emailController,
+                        ),
+                        const SizedBox(
+                          height: 16,
+                        ),
+                        // Campo Especialidad
+                        _UserInfoTextField(
+                          label: 'Especialidad',
+                          icon: Icons.medical_services,
+                          controller: _addressController,
                         ),
                       ],
-                    ),
-                    child: const Padding(
-                      padding: EdgeInsets.all(
-                        8.0,
-                      ),
-                      child: Icon(
-                        Icons.photo_camera,
-                        color: AppColors.textLight,
-                        size: 20,
-                      ),
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(
-              height: 24,
-            ),
-            // Tarjeta que contiene los campos de formulario
-            Card(
-              elevation: 2,
-              shadowColor: AppColors.black05,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(
-                  16.0,
-                ),
+          ),
+          // Botón de guardar cambios fijo en la parte inferior
+          persistentFooterButtons: [
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 8.0,
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(
-                  24.0,
-                ),
-                child: Column(
-                  children: [
-                    // Campo Nombre
-                    _UserInfoTextField(
-                      label: 'Nombre',
-                      icon: Icons.person,
-                      controller: _nameController,
+              child: SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: _isSaving ? null : _guardarCambios,
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        12.0,
+                      ),
                     ),
-                    const SizedBox(
-                      height: 16,
-                    ),
-                    // Campo Teléfono
-                    _UserInfoTextField(
-                      label: 'Teléfono',
-                      icon: Icons.phone,
-                      controller: _phoneController,
-                    ),
-                    const SizedBox(
-                      height: 16,
-                    ),
-                    // Campo Correo Electrónico
-                    _UserInfoTextField(
-                      label: 'Correo Electrónico',
-                      icon: Icons.email,
-                      controller: _emailController,
-                    ),
-                    const SizedBox(
-                      height: 16,
-                    ),
-                    // Campo Dirección
-                    _UserInfoTextField(
-                      label: 'Dirección',
-                      icon: Icons.home,
-                      controller: _addressController,
-                    ),
-                  ],
+                  ),
+                  child: _isSaving
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'Guardar Cambios',
+                        ),
                 ),
               ),
             ),
           ],
-        ),
-      ),
-      // Botón de guardar cambios fijo en la parte inferior
-      persistentFooterButtons: [
-        Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 16.0,
-            vertical: 8.0,
+          // navbar
+          bottomNavigationBar: const VetNavbar(
+            // Le pasamos la ruta estática para que el navbar resalte el ícono "Inicio".
+            currentRoute: '/perfil_veterinarios',
           ),
-          child: SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton(
-              onPressed: () {
-                // Lógica para guardar los datos | ahorita es solo visual
-              },
-              style: ElevatedButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(
-                    12.0,
-                  ),
-                ),
-              ),
-              child: const Text(
-                'Guardar Cambios',
-              ),
-            ),
-          ),
-        ),
-      ],
-      // navbar
-      bottomNavigationBar: const VetNavbar(
-        // Le pasamos la ruta estática para que el navbar resalte el ícono "Inicio".
-        currentRoute: '/perfil_veterinarios',
-      ),
+        );
+      },
     );
   }
 }
