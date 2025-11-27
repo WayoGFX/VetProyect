@@ -123,15 +123,15 @@ class _EditarExpedienteWidgetState extends State<EditarExpedienteWidget> {
       }
 
       // 4. Recargar detalles del paciente
-      if (mounted) {
-        await provider.loadPacienteDetalle(mascota.mascotaId!);
+      await provider.loadPacienteDetalle(mascota.mascotaId!);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Expediente actualizado exitosamente')),
-        );
+      if (!mounted) return;
 
-        context.pop();
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Expediente actualizado exitosamente')),
+      );
+
+      context.pop();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

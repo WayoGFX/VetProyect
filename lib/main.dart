@@ -9,6 +9,8 @@ import 'package:vet_smart_ids/providers/veterinario_provider.dart';
 import 'package:vet_smart_ids/providers/mascota_provider.dart';
 import 'package:vet_smart_ids/providers/cita_provider.dart';
 import 'package:vet_smart_ids/providers/historial_medico_provider.dart';
+import 'package:vet_smart_ids/providers/estadisticas_provider.dart';
+import 'package:vet_smart_ids/providers/alertas_provider.dart';
 
 void
 main() {
@@ -59,6 +61,18 @@ class MyApp
               (
                 _,
               ) => HistorialMedicoProvider(),
+        ),
+        ChangeNotifierProvider(
+          create:
+              (
+                _,
+              ) => EstadisticasProvider(),
+        ),
+        ChangeNotifierProvider(
+          create:
+              (
+                _,
+              ) => AlertasProvider(),
         ),
       ],
       child: MaterialApp.router(

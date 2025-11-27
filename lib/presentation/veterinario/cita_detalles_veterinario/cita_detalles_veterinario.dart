@@ -173,7 +173,8 @@ class _AppointmentDetailPageState
         );
         // Recargar citas y regresar
         await citaProvider.loadCitasDelDia();
-        if (mounted) context.pop();
+        if (!mounted) return;
+        context.pop();
       } else {
         ScaffoldMessenger.of(
           context,

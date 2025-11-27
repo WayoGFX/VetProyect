@@ -1,11 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:vet_smart_ids/core/app_colors.dart';
 import 'package:vet_smart_ids/presentation/veterinario/navbar/navbar_veterinario.dart';
+import 'package:vet_smart_ids/providers/cita_provider.dart';
+import 'package:vet_smart_ids/providers/mascota_provider.dart';
+import 'package:vet_smart_ids/providers/estadisticas_provider.dart';
+import 'package:vet_smart_ids/providers/alertas_provider.dart';
 
-class Dashboard extends StatelessWidget {
+class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
   static const String name = "dashboard";
+
+  @override
+  State<Dashboard> createState() => _DashboardState();
+}
+
+class _DashboardState extends State<Dashboard> {
+  @override
+  void initState() {
+    super.initState();
+    // Usar addPostFrameCallback para cargar datos después del build
+    // Esto evita el error "setState() called during build"
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadDashboardData();
+    });
+  }
+
+  Future<void> _loadDashboardData() async {
+    final citaProvider = context.read<CitaProvider>();
+    final mascotaProvider = context.read<MascotaProvider>();
+    final estadisticasProvider = context.read<EstadisticasProvider>();
+    final alertasProvider = context.read<AlertasProvider>();
+    
+    await Future.wait([
+      citaProvider.loadCitas(),
+      mascotaProvider.loadMascotas(),
+      estadisticasProvider.loadEstadisticas(),
+      alertasProvider.loadAlertas(),
+    ]);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,85 +114,111 @@ class TodayAppointments extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Datos de citas de ejemplo
-    final appointments = [
-      {
-        'name': 'Consulta con Max',
-        'time': '10:00 AM',
-        'image': 'https://lh3.googleusercontent.com/aida-public/AB6AXuB9H6mOziDfNaZvp0eLHO2Bcm6KUwYfAOgWHMjmZJGYSKm9Ueky_xZ9EHMRuxgUOKx1ebc5byorgG8LiUz-KHLudClD9loN_k7_pSpP5oBUUg8bxbmtW3YjPnSksEp-BbMxMgRrdkP5hUpkIDPiWr9MawSEO2hQfyrw8pO8DHyFi7W8vNn2BQb2nECfIT5c19dw64R6j7veRcewzu1GYtKoFOn9GmdVFSf-yM5GuahNqz3SKerjPh4leg3aZ96KeHoWV_dQIofKVVU'
+    return Consumer<CitaProvider>(
+      builder: (context, citaProvider, _) {
+        // Filtrar citas de hoy
+        final ahora = DateTime.now();
+        final hoy = DateTime(ahora.year, ahora.month, ahora.day);
+        final manana = hoy.add(const Duration(days: 1));
 
-      },
-      {
-        'name': 'Revisión de Luna',
-        'time': '11:30 AM',
-        'image': 'https://lh3.googleusercontent.com/aida-public/AB6AXuCUSg0E-bPQ0d3FUYA9YZvHTGWyFfs-9UXxsSdbd-8YZFruAH0-q9Lk9n7qRY0lyMfPwY_HhZEWYUHUNlWwOweNd8Kut_U778skZlX9EY6Q887Yt1RUFAm5gOs_55EL6Z_8BBfCKwuFSdpzQ7hmygivSGZfggvPTW0AI-7bKL__su6qKt7Qsb7fW8LJH4AuokYuOW2uVLB5NImJa_xqG0bhkNPpa_b7EzYx0tpxHX50iDz_3WqiNhmXDtc53uNairwdZc_giQ_crEg'
-      },
-      {
-        'name': 'Vacunación de Coco',
-        'time': '2:00 PM',
-        'image': 'https://lh3.googleusercontent.com/aida-public/AB6AXuAXsT2h8A8siDaKZydCVNO5vPixdii4QYA4G6hYhUvr6MOS8QuPcxOeXwO2OcEjLp2SuRke88j9vTt2WZGcvScfStn5W94HAlnLewxywwLVXGik0NwOF6hK3uZ0R5J7y8buSMrOUpOy-cfedYf331XxYghjRhPqdFo_plE2H6-yQFOsSQHbEJ4KTODflgQABEe4uRmrBAxxJrlmlVwlroZmxKCWVy0s_qhVI_J08pe217uZTLHJWN9QtReE2BqzadRNWv0wlXB2IUk'
-      },
-    ];
+        final citasHoy = citaProvider.citas.where((cita) {
+          return cita.fechaHora.isAfter(hoy) && cita.fechaHora.isBefore(manana);
+        }).toList();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Citas de Hoy',
-          style: Theme.of(context)
-              .textTheme
-              .titleMedium
-              ?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 12),
-        // Lista horizontal de citas
-        SizedBox(
-          height: 205,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: appointments.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 16),
-            itemBuilder: (context, index) {
-              final item = appointments[index];
-              return Container(
-                width: 160,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Imagen del paciente
-                    AspectRatio(
-                      aspectRatio: 1,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: Image.network(
-                          item['image']!,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      item['name']!,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    Flexible(
-                      child: Text(
-                        item['time']!,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.slate500Light,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Citas de Hoy',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            // Lista horizontal de citas
+            if (citasHoy.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              );
-            },
-          ),
-        ),
-      ],
+                child: const Center(
+                  child: Text(
+                    'No hay citas para hoy',
+                    style: TextStyle(
+                      color: AppColors.slate500Light,
+                    ),
+                  ),
+                ),
+              )
+            else
+              SizedBox(
+                height: 205,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: citasHoy.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 16),
+                  itemBuilder: (context, index) {
+                    final cita = citasHoy[index];
+                    return Container(
+                      width: 160,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Imagen del paciente
+                          AspectRatio(
+                            aspectRatio: 1,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: cita.mascotaFotoUrl != null &&
+                                      cita.mascotaFotoUrl!.isNotEmpty
+                                  ? Image.network(
+                                      cita.mascotaFotoUrl!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                        return Container(
+                                          color: AppColors.slate50Light,
+                                          child: const Icon(Icons.pets),
+                                        );
+                                      },
+                                    )
+                                  : Container(
+                                      color: AppColors.slate50Light,
+                                      child: const Icon(Icons.pets),
+                                    ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            cita.mascotaNombre ?? 'Mascota',
+                            style:
+                                const TextStyle(fontWeight: FontWeight.w600),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Flexible(
+                            child: Text(
+                              '${cita.fechaHora.hour.toString().padLeft(2, '0')}:${cita.fechaHora.minute.toString().padLeft(2, '0')}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.slate500Light,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }
@@ -168,108 +228,121 @@ class DashboardStats extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Datos de ejemplo para la gráfica de animales
-    final Map<String, double> stats = {
-      'Perros': 0.6,
-      'Gatos': 0.4,
-      'Aves': 0.2,
-      'Roedores': 0.15,
-      'Otros': 0.1,
-    };
+    return Consumer<EstadisticasProvider>(
+      builder: (context, estadisticasProvider, _) {
+        final stats = estadisticasProvider.tiposAnimales;
+        final colors = estadisticasProvider.tiposAnimalesColors;
+        final enfermedades = estadisticasProvider.enfermedadesComunes;
+        final enfermedadesColores = estadisticasProvider.enfermedadesColores;
+        final isLoading = estadisticasProvider.isLoading;
 
-    // Colores de las barras de la gráfica
-    final Map<String, Color> colors = {
-      'Perros': const Color(0xFFFFDDC1),
-      'Gatos': const Color(0xFFC1FFD7),
-      'Aves': const Color(0xFFD1C1FF),
-      'Roedores': const Color(0xFFFFC1E3),
-      'Otros': const Color(0xFFC1EFFF),
-    };
+        if (isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Estadísticas',
-          style: Theme.of(context)
-              .textTheme
-              .titleMedium
-              ?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(16),
-          // Contenedor principal de estadísticas con fondo de tarjeta
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Encabezado de la sección de tipos de animales
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Text('Tipos de Animales',
-                      style: TextStyle(fontWeight: FontWeight.w600)),
-                  Text('Últimos 30 días',
-                      style: TextStyle(
-                        color: AppColors.slate500Light,
-                        fontSize: 12,
-                      )),
-                ],
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Estadísticas',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(16),
+              // Contenedor principal de estadísticas con fondo de tarjeta
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: BorderRadius.circular(16),
               ),
-              const SizedBox(height: 16),
-              // Gráfica de barras de tipos de animales
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: stats.entries.map((entry) {
-                  return Expanded(
-                    child: Column(
-                      children: [
-                        // Barra de la gráfica
-                        Container(
-                          height: 120 * entry.value,
-                          width: 20,
-                          decoration: BoxDecoration(
-                            color: colors[entry.key],
-                            borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(8)),
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        // Etiqueta de la barra
-                        Text(
-                          entry.key,
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: AppColors.slate500Light,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 24),
-              // Sección de enfermedades comunes
-              const Text('Enfermedades Comunes',
-                  style: TextStyle(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 12),
-              Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  DiseaseLegend(color: Color(0xFFFFDDC1), label: 'Problemas de Piel (35%)'),
-                  DiseaseLegend(color: Color(0xFFC1FFD7), label: 'Problemas Digestivos (25%)'),
-                  DiseaseLegend(color: Color(0xFFD1C1FF), label: 'Alergias (20%)'),
+                children: [
+                  // Encabezado de la sección de tipos de animales
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: const [
+                      Text('Tipos de Animales',
+                          style: TextStyle(fontWeight: FontWeight.w600)),
+                      Text('Últimos 30 días',
+                          style: TextStyle(
+                            color: AppColors.slate500Light,
+                            fontSize: 12,
+                          )),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // Gráfica de barras de tipos de animales
+                  stats.isEmpty
+                      ? const Center(
+                          child: Text('No hay datos de mascotas'),
+                        )
+                      : Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: stats.entries.map((entry) {
+                            return Expanded(
+                              child: Column(
+                                children: [
+                                  // Barra de la gráfica
+                                  Container(
+                                    height: 120 * entry.value,
+                                    width: 20,
+                                    decoration: BoxDecoration(
+                                      color: colors[entry.key],
+                                      borderRadius: const BorderRadius.vertical(
+                                          top: Radius.circular(8)),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  // Etiqueta de la barra
+                                  Text(
+                                    entry.key,
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.slate500Light,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  // Porcentaje
+                                  Text(
+                                    '${(entry.value * 100).toStringAsFixed(0)}%',
+                                    style: const TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.slate500Light,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                  const SizedBox(height: 24),
+                  // Sección de enfermedades comunes
+                  const Text('Enfermedades Comunes',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: enfermedades.entries.map((entry) {
+                      final color = enfermedadesColores[entry.key] ?? const Color(0xFFC1EFFF);
+                      final porcentaje = (entry.value * 100).toStringAsFixed(0);
+                      return DiseaseLegend(
+                        color: color,
+                        label: '${entry.key} ($porcentaje%)',
+                      );
+                    }).toList(),
+                  )
                 ],
-              )
-            ],
-          ),
-        ),
-      ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -314,54 +387,66 @@ class AlertsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Lista de alertas de ejemplo
-    final List<Map<String, Object>> alerts = [
-      {
-        'title': 'Vacunación de Toby',
-        'subtitle': 'Próxima semana',
-        'icon': Icons.vaccines,
-      },
-      {
-        'title': 'Revisión de salud de Bella',
-        'subtitle': 'En 2 semanas',
-        'icon': Icons.favorite,
-      },
-    ];
+    return Consumer<AlertasProvider>(
+      builder: (context, alertasProvider, _) {
+        final alertas = alertasProvider.alertas;
+        final isLoading = alertasProvider.isLoading;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Alertas',
-          style: Theme.of(context)
-              .textTheme
-              .titleMedium
-              ?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 12),
-        // Muestra las alertas en Cards
-        Column(
-          children: alerts.map((alert) {
-            return Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: ListTile(
-                // Icono de la alerta
-                leading: CircleAvatar(
-                  backgroundColor: AppColors.primary.withOpacity(0.2),
-                  child: Icon(
-                    alert['icon'] as IconData,
-                    color: AppColors.primary,
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Alertas',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            // Muestra las alertas en Cards
+            if (isLoading)
+              const Center(child: CircularProgressIndicator())
+            else if (alertas.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Center(
+                  child: Text(
+                    'No hay alertas próximas',
+                    style: TextStyle(
+                      color: AppColors.slate500Light,
+                    ),
                   ),
                 ),
-                title: Text(alert['title'] as String),
-                subtitle: Text(alert['subtitle'] as String),
+              )
+            else
+              Column(
+                children: alertas.map((alerta) {
+                  return Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: ListTile(
+                      // Icono de la alerta
+                      leading: CircleAvatar(
+                        backgroundColor: alerta.color.withOpacity(0.2),
+                        child: Icon(
+                          alerta.icono,
+                          color: alerta.color,
+                        ),
+                      ),
+                      title: Text(alerta.titulo),
+                      subtitle: Text(alerta.subtitulo),
+                    ),
+                  );
+                }).toList(),
               ),
-            );
-          }).toList(),
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
 }
@@ -371,52 +456,63 @@ class ActivePatientsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Lista de pacientes activos de ejemplo
-    final patients = [
-      {
-        'name': 'Max',
-        'type': 'Canino',
-        'image': 'https://lh3.googleusercontent.com/aida-public/AB6AXuDF3xfQsQ7M4RaeNdtVsT-kfRz6qhoe598QLA5LPJ4ya0RQDxKIAMORGwU0MVtRJOBZjBBMjoElsE2ygsmQzHAizIQlreNEJCNkzolbaXXB7rfUGYX5HZvNRImGohdk3a4mFdd3oPsBCL_sjpERtJTG376PqUMgAVHS5UmVnsqmZY7W43IJbEq9OvGOWmKAHX7-CUy2DCpCWWCPtWUVfCeVUm8XSi20HOd6OsXXk1tluwy40UanH5z5oCGv5GvT87G2TlkzbdlbPNg'
-      },
-      {
-        'name': 'Luna',
-        'type': 'Felino',
-        'image': 'https://lh3.googleusercontent.com/aida-public/AB6AXuCDokGIzXlqqWByawyoAYIQPkh0LtVNNjRPifd8BvcnO1E_5ebF8kYjAgl2id2bE1wCzq84kz9FevNFHSRmh1MXAQI2bgS7ptdKfcvQdlTpHxhga4vYUbl8ky8jQXTR3AlPOtaeo1gDmQV5JKi7DXt-wFb9Qt2BGi0mdpwaxdmMU5QKI84IMymWNfzC4nzjK4XdtDxat1suLp3GsZUelAS1ISAXTJF0FsQJ3n9p64AE-K_MjjCcYMHdGERDaUdqjnCMwvNtsWWfI-I'
-      },
-      {
-        'name': 'Coco',
-        'type': 'Lagomorfo',
-        'image': 'https://lh3.googleusercontent.com/aida-public/AB6AXuBU4JWH0CgLT40xonaxQeI_JlM2wSvrIFVtsAAvT0Vv0iZ_-MiWZMZEHKebtoONuKkaBXHZmLppUjVRpZSF_QtDi4Spi1SkqE8NfjXCsSnIsEjbOo4O5ZyUzS9Rnxh4yZPGB6zbb14yCkPr-5kkIwN6sBC7AXggIj3uqV9eNZ6StkTmNBKLeaqSmBvb_a_IrO-rkcZ_DsgPoJU7Hv4Vaka7pqaEP6hTXA6IEHh96dWaCYZBWSc-jAty9dqm_clqu9IIxm_M3708Qyc'
-      },
-    ];
+    return Consumer<MascotaProvider>(
+      builder: (context, mascotaProvider, _) {
+        final mascotas = mascotaProvider.mascotas;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Pacientes Activos',
-          style: Theme.of(context)
-              .textTheme
-              .titleMedium
-              ?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 12),
-        // Muestra los pacientes en una lista
-        Column(
-          children: patients.map((p) {
-            return ListTile(
-              contentPadding: EdgeInsets.zero,
-              // Avatar con la imagen del paciente
-              leading: CircleAvatar(
-                radius: 28,
-                backgroundImage: NetworkImage(p['image']!),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Pacientes Activos',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            // Muestra los pacientes en una lista
+            if (mascotas.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Center(
+                  child: Text(
+                    'No hay pacientes registrados',
+                    style: TextStyle(
+                      color: AppColors.slate500Light,
+                    ),
+                  ),
+                ),
+              )
+            else
+              Column(
+                children: mascotas.take(5).map((mascota) {
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    // Avatar con la imagen del paciente
+                    leading: CircleAvatar(
+                      radius: 28,
+                      backgroundColor: AppColors.slate50Light,
+                      backgroundImage: mascota.fotoUrl != null &&
+                              mascota.fotoUrl!.isNotEmpty
+                          ? NetworkImage(mascota.fotoUrl!)
+                          : null,
+                      child: mascota.fotoUrl == null || mascota.fotoUrl!.isEmpty
+                          ? const Icon(Icons.pets)
+                          : null,
+                    ),
+                    title: Text(mascota.nombre),
+                    subtitle: Text(mascota.especie),
+                  );
+                }).toList(),
               ),
-              title: Text(p['name']!),
-              subtitle: Text(p['type']!),
-            );
-          }).toList(),
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
 }
@@ -426,8 +522,29 @@ class QuickAccessSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Etiquetas para los botones de acceso rápido
-    final items = ['Pacientes', 'Citas', 'Recordatorios', 'Perfil'];
+    // Elementos de acceso rápido con navegación
+    final items = [
+      {
+        'label': 'Pacientes',
+        'icon': Icons.pets,
+        'route': '/lista_pacientes',
+      },
+      {
+        'label': 'Citas',
+        'icon': Icons.calendar_today,
+        'route': '/agenda_citas_veterinario',
+      },
+      {
+        'label': 'Expedientes',
+        'icon': Icons.folder_special,
+        'route': '/ficha_paciente_veterinario',
+      },
+      {
+        'label': 'Perfil',
+        'icon': Icons.person,
+        'route': '/perfil_veterinarios',
+      },
+    ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -446,11 +563,10 @@ class QuickAccessSection extends StatelessWidget {
           mainAxisSpacing: 12,
           crossAxisSpacing: 12,
           shrinkWrap: true,
-          // Deshabilita el scroll dentro del GridView
           physics: const NeverScrollableScrollPhysics(),
           childAspectRatio: 3.5,
-          children: items.map((label) {
-            return ElevatedButton(
+          children: items.map((item) {
+            return ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: AppColors.textLight,
@@ -458,14 +574,14 @@ class QuickAccessSection extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              onPressed: () {
-                // Lógica de navegación o acción del botón
-                debugPrint("Botón de acceso rápido presionado: $label");
-              },
-              child: Text(
-                label,
+              icon: Icon(item['icon'] as IconData, size: 18),
+              label: Text(
+                item['label'] as String,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
+              onPressed: () {
+                context.push(item['route'] as String);
+              },
             );
           }).toList(),
         ),

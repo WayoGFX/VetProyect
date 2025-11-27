@@ -250,25 +250,25 @@ class _NuevoPacienteWidgetState
       print('Mascota creada exitosamente con ID: ${mascotaCreada.mascotaId}');
 
       // 3. Recargar lista de mascotas
-      if (mounted) {
-        await context
-            .read<
-              MascotaProvider
-            >()
-            .loadMascotas();
+      await context
+          .read<
+            MascotaProvider
+          >()
+          .loadMascotas();
+      
+      if (!mounted) return;
 
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Paciente registrado exitosamente',
-            ),
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Paciente registrado exitosamente',
           ),
-        );
+        ),
+      );
 
-        context.pop();
-      }
+      context.pop();
     } catch (
       e
     ) {
