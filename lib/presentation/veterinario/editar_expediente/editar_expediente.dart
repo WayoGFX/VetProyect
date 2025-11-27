@@ -51,8 +51,51 @@ class _EditarExpedienteWidgetState extends State<EditarExpedienteWidget> {
   Future<void> _cargarDatos() async {
     setState(() => _isLoading = true);
     try {
+      final provider = context.read<MascotaProvider>();
+      final mascota = provider.mascotaSeleccionada;
+
+      // Cargar listas de vacunas y alergias disponibles
       final vacunas = await _apiService.getVacunas();
       final alergias = await _apiService.getAlergias();
+
+      // Cargar datos existentes del paciente si hay mascota seleccionada
+      if (mascota != null && mascota.mascotaId != null) {
+        await provider.loadPacienteDetalle(mascota.mascotaId!);
+        final detalle = provider.pacienteDetalle;
+
+        if (detalle != null) {
+          // Prellenar vacunas ya aplicadas
+          for (var vacunaAplicada in detalle.vacunas) {
+            final vacunaId = vacunaAplicada.vacuna.vacunaId;
+            if (vacunaId != null) {
+              _vacunasSeleccionadas.add(vacunaId);
+              _lotesVacunas[vacunaId] = vacunaAplicada.lote;
+              _fechasVacunas[vacunaId] = vacunaAplicada.fechaAplicacion;
+            }
+          }
+
+          // Prellenar alergias ya asociadas
+          for (var alergiaDetalle in detalle.alergias) {
+            final alergiaId = alergiaDetalle.alergia.alergiaId;
+            if (alergiaId != null) {
+              _alergiasSeleccionadas.add(alergiaId);
+              if (alergiaDetalle.notas != null) {
+                _notasAlergias[alergiaId] = alergiaDetalle.notas!;
+              }
+            }
+          }
+
+          // Prellenar último historial médico (si existe)
+          if (detalle.historialMedico.isNotEmpty) {
+            final ultimoHistorial = detalle.historialMedico.first;
+            _diagnosticoController.text = ultimoHistorial.diagnostico;
+            _tratamientoController.text = ultimoHistorial.tratamiento;
+            if (ultimoHistorial.notasAdicionales != null) {
+              _notasController.text = ultimoHistorial.notasAdicionales!;
+            }
+          }
+        }
+      }
 
       setState(() {
         _vacunasDisponibles = vacunas;
@@ -85,41 +128,119 @@ class _EditarExpedienteWidgetState extends State<EditarExpedienteWidget> {
     setState(() => _isSaving = true);
 
     try {
-      // 1. Asociar vacunas
+      // Obtener relaciones existentes
+      final todasVacunas = await _apiService.getMascotasVacunas();
+      final todasAlergias = await _apiService.getMascotasAlergias();
+
+      final vacunasExistentes = todasVacunas
+          .where((mv) => mv.mascotaId == mascota.mascotaId)
+          .toList();
+      final alergiasExistentes = todasAlergias
+          .where((ma) => ma.mascotaId == mascota.mascotaId)
+          .toList();
+
+      // 1. Procesar vacunas
       for (final vacunaId in _vacunasSeleccionadas) {
-        final mascotaVacuna = MascotaVacuna(
-          mascotaId: mascota.mascotaId!,
-          vacunaId: vacunaId,
-          fechaAplicacion: _fechasVacunas[vacunaId] ?? DateTime.now(),
-          lote: _lotesVacunas[vacunaId] ?? '',
+        // Buscar si ya existe esta asociación
+        final existente = vacunasExistentes.firstWhere(
+          (mv) => mv.vacunaId == vacunaId,
+          orElse: () => MascotaVacuna(
+            mascotaId: -1,
+            vacunaId: -1,
+            fechaAplicacion: DateTime.now(),
+            lote: '',
+          ),
         );
-        await _apiService.createMascotaVacuna(mascotaVacuna);
+
+        if (existente.mascotaVacunaId != null) {
+          // Actualizar si ya existe - NO incluir el ID en el objeto
+          final mascotaVacuna = MascotaVacuna(
+            mascotaId: mascota.mascotaId!,
+            vacunaId: vacunaId,
+            fechaAplicacion: _fechasVacunas[vacunaId] ?? DateTime.now(),
+            lote: _lotesVacunas[vacunaId] ?? '',
+          );
+          await _apiService.updateMascotaVacuna(
+            existente.mascotaVacunaId!,
+            mascotaVacuna,
+          );
+        } else {
+          // Crear nueva si no existe
+          final mascotaVacuna = MascotaVacuna(
+            mascotaId: mascota.mascotaId!,
+            vacunaId: vacunaId,
+            fechaAplicacion: _fechasVacunas[vacunaId] ?? DateTime.now(),
+            lote: _lotesVacunas[vacunaId] ?? '',
+          );
+          await _apiService.createMascotaVacuna(mascotaVacuna);
+        }
       }
 
-      // 2. Asociar alergias
+      // 2. Procesar alergias
       for (final alergiaId in _alergiasSeleccionadas) {
-        final mascotaAlergia = MascotaAlergia(
-          mascotaId: mascota.mascotaId!,
-          alergiaId: alergiaId,
-          notas: _notasAlergias[alergiaId],
+        // Buscar si ya existe esta asociación
+        final existente = alergiasExistentes.firstWhere(
+          (ma) => ma.alergiaId == alergiaId,
+          orElse: () => MascotaAlergia(
+            mascotaId: -1,
+            alergiaId: -1,
+          ),
         );
-        await _apiService.createMascotaAlergia(mascotaAlergia);
+
+        if (existente.mascotaAlergiaId != null) {
+          // Actualizar si ya existe - NO incluir el ID en el objeto
+          final mascotaAlergia = MascotaAlergia(
+            mascotaId: mascota.mascotaId!,
+            alergiaId: alergiaId,
+            notas: _notasAlergias[alergiaId],
+          );
+          await _apiService.updateMascotaAlergia(
+            existente.mascotaAlergiaId!,
+            mascotaAlergia,
+          );
+        } else {
+          // Crear nueva si no existe
+          final mascotaAlergia = MascotaAlergia(
+            mascotaId: mascota.mascotaId!,
+            alergiaId: alergiaId,
+            notas: _notasAlergias[alergiaId],
+          );
+          await _apiService.createMascotaAlergia(mascotaAlergia);
+        }
       }
 
-      // 3. Crear historial médico si hay datos
+      // 3. Crear nuevo historial médico solo si hay cambios
       if (_diagnosticoController.text.isNotEmpty) {
-        final historial = HistorialMedico(
-          mascotaId: mascota.mascotaId!,
-          veterinarioId: 1, // TODO: Obtener del usuario logueado
-          usuarioId: mascota.usuarioId,
-          diagnostico: _diagnosticoController.text.trim(),
-          tratamiento: _tratamientoController.text.isEmpty
-              ? 'Sin tratamiento especificado'
-              : _tratamientoController.text.trim(),
-          notasAdicionales: _notasController.text.isEmpty ? null : _notasController.text.trim(),
-          fechaConsulta: DateTime.now(),
-        );
-        await _apiService.createHistorialMedico(historial);
+        final detalle = provider.pacienteDetalle;
+        bool debeCrearNuevo = true;
+
+        // Verificar si es el mismo que el último historial
+        if (detalle != null && detalle.historialMedico.isNotEmpty) {
+          final ultimo = detalle.historialMedico.first;
+          if (ultimo.diagnostico == _diagnosticoController.text.trim() &&
+              ultimo.tratamiento == (_tratamientoController.text.isEmpty
+                  ? 'Sin tratamiento especificado'
+                  : _tratamientoController.text.trim()) &&
+              (ultimo.notasAdicionales ?? '') ==
+                  (_notasController.text.isEmpty ? '' : _notasController.text.trim())) {
+            debeCrearNuevo = false; // No hay cambios, no crear duplicado
+          }
+        }
+
+        if (debeCrearNuevo) {
+          final historial = HistorialMedico(
+            mascotaId: mascota.mascotaId!,
+            veterinarioId: 1, // TODO: Obtener del usuario logueado
+            usuarioId: mascota.usuarioId,
+            diagnostico: _diagnosticoController.text.trim(),
+            tratamiento: _tratamientoController.text.isEmpty
+                ? 'Sin tratamiento especificado'
+                : _tratamientoController.text.trim(),
+            notasAdicionales: _notasController.text.isEmpty ? null : _notasController.text.trim(),
+            fechaConsulta: DateTime.now(),
+          );
+          await _apiService.createHistorialMedico(historial);
+        }
       }
 
       // 4. Recargar detalles del paciente
@@ -386,6 +507,9 @@ class _EditarExpedienteWidgetState extends State<EditarExpedienteWidget> {
                   child: Column(
                     children: [
                       TextField(
+                        controller: TextEditingController(
+                          text: _lotesVacunas[vacuna.vacunaId] ?? '',
+                        ),
                         decoration: InputDecoration(
                           labelText: 'Lote',
                           isDense: true,
@@ -478,6 +602,9 @@ class _EditarExpedienteWidgetState extends State<EditarExpedienteWidget> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                   child: TextField(
+                    controller: TextEditingController(
+                      text: _notasAlergias[alergia.alergiaId] ?? '',
+                    ),
                     decoration: InputDecoration(
                       labelText: 'Notas adicionales',
                       isDense: true,

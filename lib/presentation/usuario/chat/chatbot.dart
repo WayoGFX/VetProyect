@@ -136,6 +136,7 @@ class _ChatScreenState
             chosen.mascotaId!,
           );
           _awaitingChoice = false;
+          _awaitingPetName = false; // Mascota seleccionada, ya no esperar más nombres
           _choiceCandidates = [];
           messages.add(
             ChatMessage(
@@ -393,6 +394,10 @@ class _ChatScreenState
       final petSummary = _buildPetContextText(
         prov.pacienteDetalle,
       );
+
+      // Mascota cargada exitosamente, ya no esperar más nombres
+      _awaitingPetName = false;
+
       messages.add(
         ChatMessage(
           text: 'Perfecto — encontré a ${foundNonNull.nombre}. He cargado su información:\n$petSummary\n¿En qué puedo ayudarte respecto a ${foundNonNull.nombre}?',
@@ -447,8 +452,7 @@ class _ChatScreenState
               (
                 v,
               ) =>
-                  (v.vacunaNombre ??
-                  (v.vacuna?.nombre) ??
+                  (v.vacuna?.nombre ??
                   'vacuna'),
             )
             .join(
@@ -461,8 +465,7 @@ class _ChatScreenState
               (
                 a,
               ) =>
-                  (a.alergiaNombre ??
-                  (a.alergia?.tipo) ??
+                  (a.alergia?.nombre ??
                   'alergia'),
             )
             .join(
@@ -518,11 +521,142 @@ class _ChatScreenState
     String prompt,
     pacienteDetalle,
   ) {
-    // Respuesta simple basada en los datos disponibles
-    if (pacienteDetalle ==
-        null) {
-      return 'Puedo ayudarte si me proporcionas el nombre de la mascota y, opcionalmente, alguna información adicional (raza, edad, síntomas).';
+    final promptLower = prompt.toLowerCase();
+
+    // Respuestas a preguntas comunes
+    if (_matchesKeywords(promptLower, ['hola', 'buenos días', 'buenas tardes', 'buenas noches', 'hey', 'hi'])) {
+      return '¡Hola! Soy el asistente de VetSmart. Puedo ayudarte con información sobre tu mascota, síntomas comunes, cuidados básicos y más. ¿En qué puedo ayudarte?';
     }
+
+    if (_matchesKeywords(promptLower, ['gracias', 'muchas gracias', 'thank you'])) {
+      return '¡De nada! Si necesitas algo más, no dudes en preguntar. Estoy aquí para ayudarte con tus mascotas.';
+    }
+
+    if (_matchesKeywords(promptLower, ['adiós', 'adios', 'hasta luego', 'chao', 'bye'])) {
+      return 'Hasta luego! Cuida bien de tu mascota. Recuerda que siempre puedes volver si necesitas ayuda.';
+    }
+
+    // Preguntas sobre vacunas
+    if (_matchesKeywords(promptLower, ['vacuna', 'vacunas', 'inmunización', 'calendario de vacunación'])) {
+      if (pacienteDetalle != null) {
+        final mascota = pacienteDetalle.mascota;
+        final vacunas = (pacienteDetalle.vacunas as List)
+            .map((v) => '${v.vacuna?.nombre ?? 'Vacuna'} (${_formatDate(v.fechaAplicacion)})')
+            .join('\n  • ');
+
+        if (vacunas.isNotEmpty) {
+          return 'Vacunas aplicadas a ${mascota.nombre}:\n  • $vacunas\n\nEs importante mantener el calendario de vacunación al día. Consulta con tu veterinario sobre las próximas dosis.';
+        } else {
+          return '${mascota.nombre} no tiene vacunas registradas aún. Es muy importante vacunar a tu mascota para prevenir enfermedades. Consulta con tu veterinario sobre el calendario de vacunación recomendado.';
+        }
+      }
+      return 'Las vacunas son esenciales para proteger a tu mascota de enfermedades graves. Cada especie tiene un calendario específico. Para ver las vacunas de tu mascota, dime su nombre primero.';
+    }
+
+    // Preguntas sobre alergias
+    if (_matchesKeywords(promptLower, ['alergia', 'alergias', 'alérgico', 'reacción alérgica'])) {
+      if (pacienteDetalle != null) {
+        final mascota = pacienteDetalle.mascota;
+        final alergias = (pacienteDetalle.alergias as List)
+            .map((a) => '${a.alergia?.nombre ?? 'Alergia'} - Tipo: ${a.alergia?.tipo ?? 'N/A'}${a.notas != null ? '\n    Notas: ${a.notas}' : ''}')
+            .join('\n  • ');
+
+        if (alergias.isNotEmpty) {
+          return 'Alergias registradas de ${mascota.nombre}:\n  • $alergias\n\nEvita el contacto con estos alérgenos y consulta con tu veterinario si notas síntomas como picazón, enrojecimiento o problemas respiratorios.';
+        } else {
+          return '${mascota.nombre} no tiene alergias registradas. Si notas síntomas como picazón excesiva, enrojecimiento, problemas respiratorios o digestivos, consulta con tu veterinario.';
+        }
+      }
+      return 'Las alergias en mascotas pueden manifestarse de varias formas: picazón, enrojecimiento, problemas digestivos, etc. Para ver las alergias registradas, dime el nombre de tu mascota.';
+    }
+
+    // Preguntas sobre citas
+    if (_matchesKeywords(promptLower, ['cita', 'citas', 'consulta', 'consultas', 'agendar', 'próxima cita'])) {
+      if (pacienteDetalle != null) {
+        final mascota = pacienteDetalle.mascota;
+        final proximasCitas = (pacienteDetalle.proximasCitas as List);
+
+        if (proximasCitas.isNotEmpty) {
+          final citasTexto = proximasCitas.take(3).map((c) =>
+            '${c.motivo} - ${_formatDateTime(c.fechaHora)}'
+          ).join('\n  • ');
+          return 'Próximas citas de ${mascota.nombre}:\n  • $citasTexto\n\nRecuerda llegar unos minutos antes. Puedes ver más detalles en la sección de citas de la app.';
+        } else {
+          return '${mascota.nombre} no tiene citas programadas. Puedes agendar una nueva cita desde la app o contactando a tu veterinario.';
+        }
+      }
+      return 'Puedes agendar citas para tu mascota desde la aplicación. Para ver las citas programadas, dime el nombre de tu mascota.';
+    }
+
+    // Preguntas sobre alimentación
+    if (_matchesKeywords(promptLower, ['comida', 'alimento', 'alimentación', 'comer', 'dieta', 'nutrición'])) {
+      if (pacienteDetalle != null) {
+        final mascota = pacienteDetalle.mascota;
+        final especie = mascota.especie.toLowerCase();
+
+        if (especie.contains('perro')) {
+          return 'Alimentación para ${mascota.nombre}:\n\nPerros necesitan:\n• Comida balanceada específica para su edad y tamaño\n• Agua fresca disponible siempre\n• 2-3 comidas al día (adultos)\n• Evitar: chocolate, uvas, cebolla, ajo, alimentos con xilitol\n\nConsulta con tu veterinario sobre la cantidad adecuada según el peso y actividad de ${mascota.nombre}.';
+        } else if (especie.contains('gato')) {
+          return 'Alimentación para ${mascota.nombre}:\n\nGatos necesitan:\n• Comida de alta calidad rica en proteína animal\n• Agua fresca siempre disponible\n• 2-4 comidas pequeñas al día\n• Evitar: lácteos, atún en exceso, cebolla, ajo\n\nLos gatos son carnívoros obligados. Consulta con tu veterinario sobre la dieta ideal para ${mascota.nombre}.';
+        }
+        return 'Para ${mascota.nombre}, te recomiendo consultar con tu veterinario sobre la dieta más adecuada según su especie, edad, peso y nivel de actividad.';
+      }
+      return 'La alimentación adecuada es clave para la salud de tu mascota. Cada especie y etapa de vida requiere diferentes nutrientes. ¿Sobre qué mascota quieres saber?';
+    }
+
+    // Preguntas sobre ejercicio
+    if (_matchesKeywords(promptLower, ['ejercicio', 'paseo', 'pasear', 'actividad física', 'jugar', 'juego'])) {
+      if (pacienteDetalle != null) {
+        final mascota = pacienteDetalle.mascota;
+        final especie = mascota.especie.toLowerCase();
+
+        if (especie.contains('perro')) {
+          return 'Ejercicio para ${mascota.nombre}:\n\n• Paseos diarios: al menos 30-60 minutos\n• Juegos interactivos: buscar, tira y afloja\n• Socialización con otros perros\n• Adapta la intensidad a su edad y raza\n\nEl ejercicio regular previene obesidad, mejora el comportamiento y fortalece el vínculo contigo.';
+        } else if (especie.contains('gato')) {
+          return 'Ejercicio para ${mascota.nombre}:\n\n• Juegos con juguetes interactivos\n• Rascadores y árboles para gatos\n• Sesiones de juego de 10-15 min varias veces al día\n• Enriquecimiento ambiental (cajas, escondites)\n\nLos gatos necesitan estimulación mental y física, especialmente si viven en interior.';
+        }
+        return 'El ejercicio es importante para ${mascota.nombre}. Consulta con tu veterinario sobre la cantidad y tipo de actividad recomendada.';
+      }
+      return 'El ejercicio regular es esencial para la salud física y mental de las mascotas. ¿Sobre qué mascota quieres información?';
+    }
+
+    // Preguntas sobre baño/higiene
+    if (_matchesKeywords(promptLower, ['baño', 'bañar', 'higiene', 'aseo', 'limpiar', 'limpieza', 'peinar'])) {
+      if (pacienteDetalle != null) {
+        final mascota = pacienteDetalle.mascota;
+        final especie = mascota.especie.toLowerCase();
+
+        if (especie.contains('perro')) {
+          return 'Higiene para ${mascota.nombre}:\n\n• Baño: cada 1-3 meses (según actividad)\n• Cepillado: diario o semanal según el pelaje\n• Uñas: cortar cada 1-2 meses\n• Dientes: cepillar 2-3 veces por semana\n• Oídos: revisar y limpiar semanalmente\n\nUsa productos específicos para perros. El exceso de baños puede resecar la piel.';
+        } else if (especie.contains('gato')) {
+          return 'Higiene para ${mascota.nombre}:\n\n• Los gatos se asean solos, baño solo si es necesario\n• Cepillado: diario (pelo largo) o semanal (pelo corto)\n• Uñas: proporcionar rascador, cortar si es necesario\n• Dientes: cepillar 2-3 veces por semana\n• Oídos: revisar semanalmente\n\nEvita bañar a tu gato frecuentemente a menos que sea necesario.';
+        }
+        return 'La higiene adecuada mantiene a ${mascota.nombre} saludable. Consulta con tu veterinario sobre rutinas específicas.';
+      }
+      return 'El cuidado e higiene varía según la especie y tipo de pelaje. ¿De qué mascota quieres saber?';
+    }
+
+    // Preguntas sobre comportamiento
+    if (_matchesKeywords(promptLower, ['comportamiento', 'conducta', 'agresivo', 'miedo', 'ansiedad', 'ladra', 'maúlla', 'destructivo'])) {
+      return 'Problemas de comportamiento:\n\n• Pueden indicar estrés, miedo, aburrimiento o problemas de salud\n• Identificar la causa es clave para solucionarlo\n• Considera: cambios recientes, rutina, ejercicio, estimulación\n• El refuerzo positivo es más efectivo que el castigo\n\nSi el problema persiste o empeora, consulta con un veterinario o etólogo (especialista en comportamiento animal).';
+    }
+
+    // Preguntas sobre edad
+    if (_matchesKeywords(promptLower, ['edad', 'años', 'viejo', 'cachorro', 'adulto', 'senior'])) {
+      if (pacienteDetalle != null) {
+        final mascota = pacienteDetalle.mascota;
+        final edadTexto = _calcAgeText(mascota.fechaNacimiento);
+        return '${mascota.nombre} tiene ${edadTexto}.\n\nCada etapa de vida requiere cuidados específicos:\n• Cachorro/gatito: más vacunas, socialización\n• Adulto: mantenimiento, prevención\n• Senior: chequeos más frecuentes, dieta especial\n\nConsulta con tu veterinario sobre los cuidados según la edad.';
+      }
+      return 'Dime el nombre de tu mascota y te diré su edad y los cuidados recomendados para su etapa de vida.';
+    }
+
+    // Información general si no hay detalle
+    if (pacienteDetalle == null) {
+      return 'Puedo ayudarte con:\n• Información sobre vacunas y alergias\n• Consejos sobre alimentación y ejercicio\n• Cuidados e higiene\n• Síntomas y cuándo acudir al veterinario\n\nPara darte información específica, dime el nombre de tu mascota.';
+    }
+
+    // Respuesta por defecto con información de la mascota
     final mascota = pacienteDetalle.mascota;
     final vacunas =
         (pacienteDetalle.vacunas
@@ -531,7 +665,6 @@ class _ChatScreenState
               (
                 v,
               ) =>
-                  v.vacunaNombre ??
                   v.vacuna?.nombre ??
                   'vacuna',
             )
@@ -545,7 +678,6 @@ class _ChatScreenState
               (
                 a,
               ) =>
-                  a.alergiaNombre ??
                   a.alergia?.nombre ??
                   'alergia',
             )
@@ -569,9 +701,23 @@ class _ChatScreenState
       '- Alergias: ${alergias.isNotEmpty ? alergias : 'ninguna registrada'}',
     );
     buffer.writeln(
-      '\nSi describes los síntomas podré darte sugerencias generales (no sustituyen al veterinario).',
+      '\nPregúntame sobre vacunas, alergias, citas, alimentación, ejercicio o describe síntomas para sugerencias.',
     );
     return buffer.toString();
+  }
+
+  bool _matchesKeywords(String text, List<String> keywords) {
+    return keywords.any((keyword) => text.contains(keyword));
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  }
+
+  String _formatDateTime(DateTime date) {
+    final hour = date.hour > 12 ? date.hour - 12 : (date.hour == 0 ? 12 : date.hour);
+    final period = date.hour >= 12 ? 'PM' : 'AM';
+    return '${date.day}/${date.month}/${date.year} ${hour}:${date.minute.toString().padLeft(2, '0')} $period';
   }
 
   bool _looksLikeSymptoms(
