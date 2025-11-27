@@ -6,6 +6,8 @@ class ApiConfig {
 
   // Si usas emulador Android, usa: 'https://10.0.2.2:7071/api/'
   // Si usas dispositivo físico en la misma red, usa tu IP local: 'https://192.168.x.x:7071/api/'
+  // Si usas emulador Android, usa: 'https://10.0.2.2:7071/api/'
+  // Si usas dispositivo físico en la misma red, usa tu IP local: 'https://192.168.x.x:7071/api/'
 
   // Timeout para peticiones HTTP
   static const Duration timeout = Duration(
