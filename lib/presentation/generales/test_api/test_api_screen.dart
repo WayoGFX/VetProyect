@@ -1,45 +1,67 @@
 import 'package:flutter/material.dart';
 import 'package:vet_smart_ids/services/api_service.dart';
 import 'package:vet_smart_ids/models/veterinario.dart';
-import 'package:vet_smart_ids/models/usuario.dart';
-import 'package:vet_smart_ids/models/mascota.dart';
-import 'package:vet_smart_ids/models/cita.dart';
 
 /// Pantalla de prueba para verificar la conexión con la API
 /// IMPORTANTE: Esta pantalla es solo para testing, elimínala en producción
-class TestApiScreen extends StatefulWidget {
+class TestApiScreen
+    extends
+        StatefulWidget {
   static const String name = 'test_api';
-  const TestApiScreen({super.key});
+  const TestApiScreen({
+    super.key,
+  });
 
   @override
-  State<TestApiScreen> createState() => _TestApiScreenState();
+  State<
+    TestApiScreen
+  >
+  createState() => _TestApiScreenState();
 }
 
-class _TestApiScreenState extends State<TestApiScreen> {
+class _TestApiScreenState
+    extends
+        State<
+          TestApiScreen
+        > {
   final ApiService _apiService = ApiService();
   String _resultado = 'Presiona un botón para probar la API';
   bool _isLoading = false;
   bool _success = false;
 
-  void _setLoading(bool loading) {
-    setState(() {
-      _isLoading = loading;
-    });
+  void _setLoading(
+    bool loading,
+  ) {
+    setState(
+      () {
+        _isLoading = loading;
+      },
+    );
   }
 
-  void _setResultado(String mensaje, bool success) {
-    setState(() {
-      _resultado = mensaje;
-      _success = success;
-      _isLoading = false;
-    });
+  void _setResultado(
+    String mensaje,
+    bool success,
+  ) {
+    setState(
+      () {
+        _resultado = mensaje;
+        _success = success;
+        _isLoading = false;
+      },
+    );
   }
 
   // ============================================================================
   // PRUEBA 1: Obtener todos los veterinarios
   // ============================================================================
-  Future<void> _testGetVeterinarios() async {
-    _setLoading(true);
+  Future<
+    void
+  >
+  _testGetVeterinarios() async {
+    _setLoading(
+      true,
+    );
     try {
       final veterinarios = await _apiService.getVeterinarios();
       _setResultado(
@@ -47,16 +69,26 @@ class _TestApiScreenState extends State<TestApiScreen> {
         'Ejemplo:\n${veterinarios.isNotEmpty ? "Nombre: ${veterinarios[0].nombreCompleto}\nEmail: ${veterinarios[0].email}\nEspecialidad: ${veterinarios[0].especialidad}" : "No hay veterinarios"}',
         true,
       );
-    } catch (e) {
-      _setResultado('❌ ERROR al obtener veterinarios:\n$e', false);
+    } catch (
+      e
+    ) {
+      _setResultado(
+        '❌ ERROR al obtener veterinarios:\n$e',
+        false,
+      );
     }
   }
 
   // ============================================================================
   // PRUEBA 2: Obtener todos los usuarios
   // ============================================================================
-  Future<void> _testGetUsuarios() async {
-    _setLoading(true);
+  Future<
+    void
+  >
+  _testGetUsuarios() async {
+    _setLoading(
+      true,
+    );
     try {
       final usuarios = await _apiService.getUsuarios();
       _setResultado(
@@ -64,16 +96,26 @@ class _TestApiScreenState extends State<TestApiScreen> {
         'Ejemplo:\n${usuarios.isNotEmpty ? "Nombre: ${usuarios[0].nombreCompleto}\nEmail: ${usuarios[0].email}\nTeléfono: ${usuarios[0].telefono}" : "No hay usuarios"}',
         true,
       );
-    } catch (e) {
-      _setResultado('❌ ERROR al obtener usuarios:\n$e', false);
+    } catch (
+      e
+    ) {
+      _setResultado(
+        '❌ ERROR al obtener usuarios:\n$e',
+        false,
+      );
     }
   }
 
   // ============================================================================
   // PRUEBA 3: Obtener todas las mascotas
   // ============================================================================
-  Future<void> _testGetMascotas() async {
-    _setLoading(true);
+  Future<
+    void
+  >
+  _testGetMascotas() async {
+    _setLoading(
+      true,
+    );
     try {
       final mascotas = await _apiService.getMascotas();
       _setResultado(
@@ -81,16 +123,26 @@ class _TestApiScreenState extends State<TestApiScreen> {
         'Ejemplo:\n${mascotas.isNotEmpty ? "Nombre: ${mascotas[0].nombre}\nEspecie: ${mascotas[0].especie}\nRaza: ${mascotas[0].raza}" : "No hay mascotas"}',
         true,
       );
-    } catch (e) {
-      _setResultado('❌ ERROR al obtener mascotas:\n$e', false);
+    } catch (
+      e
+    ) {
+      _setResultado(
+        '❌ ERROR al obtener mascotas:\n$e',
+        false,
+      );
     }
   }
 
   // ============================================================================
   // PRUEBA 4: Obtener todas las citas
   // ============================================================================
-  Future<void> _testGetCitas() async {
-    _setLoading(true);
+  Future<
+    void
+  >
+  _testGetCitas() async {
+    _setLoading(
+      true,
+    );
     try {
       final citas = await _apiService.getCitas();
       _setResultado(
@@ -98,16 +150,26 @@ class _TestApiScreenState extends State<TestApiScreen> {
         'Ejemplo:\n${citas.isNotEmpty ? "Motivo: ${citas[0].motivo}\nFecha: ${citas[0].fechaHora}\nEstado: ${citas[0].estado}" : "No hay citas"}',
         true,
       );
-    } catch (e) {
-      _setResultado('❌ ERROR al obtener citas:\n$e', false);
+    } catch (
+      e
+    ) {
+      _setResultado(
+        '❌ ERROR al obtener citas:\n$e',
+        false,
+      );
     }
   }
 
   // ============================================================================
   // PRUEBA 5: Obtener historiales médicos
   // ============================================================================
-  Future<void> _testGetHistoriales() async {
-    _setLoading(true);
+  Future<
+    void
+  >
+  _testGetHistoriales() async {
+    _setLoading(
+      true,
+    );
     try {
       final historiales = await _apiService.getHistorialesMedicos();
       _setResultado(
@@ -115,16 +177,26 @@ class _TestApiScreenState extends State<TestApiScreen> {
         'Ejemplo:\n${historiales.isNotEmpty ? "Diagnóstico: ${historiales[0].diagnostico}\nTratamiento: ${historiales[0].tratamiento}" : "No hay historiales"}',
         true,
       );
-    } catch (e) {
-      _setResultado('❌ ERROR al obtener historiales:\n$e', false);
+    } catch (
+      e
+    ) {
+      _setResultado(
+        '❌ ERROR al obtener historiales:\n$e',
+        false,
+      );
     }
   }
 
   // ============================================================================
   // PRUEBA 6: Obtener vacunas
   // ============================================================================
-  Future<void> _testGetVacunas() async {
-    _setLoading(true);
+  Future<
+    void
+  >
+  _testGetVacunas() async {
+    _setLoading(
+      true,
+    );
     try {
       final vacunas = await _apiService.getVacunas();
       _setResultado(
@@ -132,16 +204,26 @@ class _TestApiScreenState extends State<TestApiScreen> {
         'Ejemplo:\n${vacunas.isNotEmpty ? "Nombre: ${vacunas[0].nombre}\nDescripción: ${vacunas[0].descripcion}" : "No hay vacunas"}',
         true,
       );
-    } catch (e) {
-      _setResultado('❌ ERROR al obtener vacunas:\n$e', false);
+    } catch (
+      e
+    ) {
+      _setResultado(
+        '❌ ERROR al obtener vacunas:\n$e',
+        false,
+      );
     }
   }
 
   // ============================================================================
   // PRUEBA 7: Crear un veterinario de prueba
   // ============================================================================
-  Future<void> _testCreateVeterinario() async {
-    _setLoading(true);
+  Future<
+    void
+  >
+  _testCreateVeterinario() async {
+    _setLoading(
+      true,
+    );
     try {
       final nuevoVet = Veterinario(
         nombreCompleto: 'Dr. Test Flutter',
@@ -152,7 +234,9 @@ class _TestApiScreenState extends State<TestApiScreen> {
         fotoUrl: null,
       );
 
-      final creado = await _apiService.createVeterinario(nuevoVet);
+      final creado = await _apiService.createVeterinario(
+        nuevoVet,
+      );
       _setResultado(
         '✅ ÉXITO: Veterinario creado\n\n'
         'ID: ${creado.veterinarioId}\n'
@@ -161,23 +245,39 @@ class _TestApiScreenState extends State<TestApiScreen> {
         'NOTA: Elimínalo manualmente de la BD si no lo necesitas',
         true,
       );
-    } catch (e) {
-      _setResultado('❌ ERROR al crear veterinario:\n$e', false);
+    } catch (
+      e
+    ) {
+      _setResultado(
+        '❌ ERROR al crear veterinario:\n$e',
+        false,
+      );
     }
   }
 
   // ============================================================================
   // PRUEBA COMPLETA: Probar todos los endpoints principales
   // ============================================================================
-  Future<void> _testAllEndpoints() async {
-    _setLoading(true);
-    final resultados = <String, bool>{};
+  Future<
+    void
+  >
+  _testAllEndpoints() async {
+    _setLoading(
+      true,
+    );
+    final resultados =
+        <
+          String,
+          bool
+        >{};
 
     // Prueba 1: Veterinarios
     try {
       await _apiService.getVeterinarios();
       resultados['Veterinarios'] = true;
-    } catch (e) {
+    } catch (
+      e
+    ) {
       resultados['Veterinarios'] = false;
     }
 
@@ -185,7 +285,9 @@ class _TestApiScreenState extends State<TestApiScreen> {
     try {
       await _apiService.getUsuarios();
       resultados['Usuarios'] = true;
-    } catch (e) {
+    } catch (
+      e
+    ) {
       resultados['Usuarios'] = false;
     }
 
@@ -193,7 +295,9 @@ class _TestApiScreenState extends State<TestApiScreen> {
     try {
       await _apiService.getMascotas();
       resultados['Mascotas'] = true;
-    } catch (e) {
+    } catch (
+      e
+    ) {
       resultados['Mascotas'] = false;
     }
 
@@ -201,7 +305,9 @@ class _TestApiScreenState extends State<TestApiScreen> {
     try {
       await _apiService.getCitas();
       resultados['Citas'] = true;
-    } catch (e) {
+    } catch (
+      e
+    ) {
       resultados['Citas'] = false;
     }
 
@@ -209,7 +315,9 @@ class _TestApiScreenState extends State<TestApiScreen> {
     try {
       await _apiService.getHistorialesMedicos();
       resultados['Historiales Médicos'] = true;
-    } catch (e) {
+    } catch (
+      e
+    ) {
       resultados['Historiales Médicos'] = false;
     }
 
@@ -217,7 +325,9 @@ class _TestApiScreenState extends State<TestApiScreen> {
     try {
       await _apiService.getVacunas();
       resultados['Vacunas'] = true;
-    } catch (e) {
+    } catch (
+      e
+    ) {
       resultados['Vacunas'] = false;
     }
 
@@ -225,50 +335,90 @@ class _TestApiScreenState extends State<TestApiScreen> {
     try {
       await _apiService.getAlergias();
       resultados['Alergias'] = true;
-    } catch (e) {
+    } catch (
+      e
+    ) {
       resultados['Alergias'] = false;
     }
 
     // Generar resumen
-    final exitosos = resultados.values.where((v) => v).length;
+    final exitosos = resultados.values
+        .where(
+          (
+            v,
+          ) => v,
+        )
+        .length;
     final total = resultados.length;
-    final success = exitosos == total;
+    final success =
+        exitosos ==
+        total;
 
     final mensaje = StringBuffer();
-    mensaje.writeln(success
-        ? '✅ TODAS LAS PRUEBAS PASARON ($exitosos/$total)'
-        : '⚠️ ALGUNAS PRUEBAS FALLARON ($exitosos/$total)');
-    mensaje.writeln('\nResultados:');
-    resultados.forEach((endpoint, success) {
-      mensaje.writeln('${success ? "✅" : "❌"} $endpoint');
-    });
+    mensaje.writeln(
+      success
+          ? '✅ TODAS LAS PRUEBAS PASARON ($exitosos/$total)'
+          : '⚠️ ALGUNAS PRUEBAS FALLARON ($exitosos/$total)',
+    );
+    mensaje.writeln(
+      '\nResultados:',
+    );
+    resultados.forEach(
+      (
+        endpoint,
+        success,
+      ) {
+        mensaje.writeln(
+          '${success ? "✅" : "❌"} $endpoint',
+        );
+      },
+    );
 
-    _setResultado(mensaje.toString(), success);
+    _setResultado(
+      mensaje.toString(),
+      success,
+    );
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+    BuildContext context,
+  ) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('🧪 Test API Connection'),
+        title: const Text(
+          '🧪 Test API Connection',
+        ),
         backgroundColor: Colors.deepPurple,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(
+          20,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Indicador de estado
             Card(
-              color: _success ? Colors.green[50] : Colors.red[50],
+              color: _success
+                  ? Colors.green[50]
+                  : Colors.red[50],
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(
+                  16,
+                ),
                 child: _isLoading
                     ? const Row(
                         children: [
                           CircularProgressIndicator(),
-                          SizedBox(width: 16),
-                          Expanded(child: Text('Probando conexión...')),
+                          SizedBox(
+                            width: 16,
+                          ),
+                          Expanded(
+                            child: Text(
+                              'Probando conexión...',
+                            ),
+                          ),
                         ],
                       )
                     : Text(
@@ -276,18 +426,27 @@ class _TestApiScreenState extends State<TestApiScreen> {
                         style: TextStyle(
                           fontFamily: 'monospace',
                           fontSize: 12,
-                          color: _success ? Colors.green[900] : Colors.red[900],
+                          color: _success
+                              ? Colors.green[900]
+                              : Colors.red[900],
                         ),
                       ),
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(
+              height: 20,
+            ),
             const Text(
               'Pruebas Individuales:',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(
+              height: 10,
+            ),
 
             // Botones de pruebas individuales
             _buildTestButton(
@@ -327,14 +486,23 @@ class _TestApiScreenState extends State<TestApiScreen> {
               Colors.green,
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(
+              height: 20,
+            ),
             const Divider(),
-            const SizedBox(height: 10),
+            const SizedBox(
+              height: 10,
+            ),
             const Text(
               'Pruebas de Escritura:',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(
+              height: 10,
+            ),
 
             _buildTestButton(
               'POST Crear Veterinario',
@@ -343,19 +511,33 @@ class _TestApiScreenState extends State<TestApiScreen> {
               Colors.indigo,
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(
+              height: 20,
+            ),
             const Divider(),
-            const SizedBox(height: 20),
+            const SizedBox(
+              height: 20,
+            ),
 
             // Botón de prueba completa
             ElevatedButton.icon(
-              onPressed: _isLoading ? null : _testAllEndpoints,
-              icon: const Icon(Icons.play_arrow, size: 28),
+              onPressed: _isLoading
+                  ? null
+                  : _testAllEndpoints,
+              icon: const Icon(
+                Icons.play_arrow,
+                size: 28,
+              ),
               label: const Padding(
-                padding: EdgeInsets.all(16),
+                padding: EdgeInsets.all(
+                  16,
+                ),
                 child: Text(
                   'PROBAR TODOS LOS ENDPOINTS',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               style: ElevatedButton.styleFrom(
@@ -364,20 +546,29 @@ class _TestApiScreenState extends State<TestApiScreen> {
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(
+              height: 20,
+            ),
 
             // Información de ayuda
             Card(
               color: Colors.blue[50],
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(
+                  16,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.info, color: Colors.blue[700]),
-                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.info,
+                          color: Colors.blue[700],
+                        ),
+                        const SizedBox(
+                          width: 8,
+                        ),
                         Text(
                           'Información',
                           style: TextStyle(
@@ -387,13 +578,18 @@ class _TestApiScreenState extends State<TestApiScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(
+                      height: 8,
+                    ),
                     Text(
                       '• Asegúrate que tu API esté corriendo en localhost:5022\n'
                       '• Si usas emulador, cambia la URL en api_config.dart a 10.0.2.2:5022\n'
                       '• Si usas dispositivo físico, usa tu IP local\n'
                       '• Los datos de prueba se guardan en la BD real',
-                      style: TextStyle(color: Colors.blue[900], fontSize: 12),
+                      style: TextStyle(
+                        color: Colors.blue[900],
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
@@ -412,13 +608,23 @@ class _TestApiScreenState extends State<TestApiScreen> {
     Color color,
   ) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(
+        bottom: 8,
+      ),
       child: ElevatedButton.icon(
-        onPressed: _isLoading ? null : onPressed,
-        icon: Icon(icon),
+        onPressed: _isLoading
+            ? null
+            : onPressed,
+        icon: Icon(
+          icon,
+        ),
         label: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Text(label),
+          padding: const EdgeInsets.all(
+            12,
+          ),
+          child: Text(
+            label,
+          ),
         ),
         style: ElevatedButton.styleFrom(
           backgroundColor: color,

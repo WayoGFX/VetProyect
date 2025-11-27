@@ -141,7 +141,6 @@ class _NuevoPacienteWidgetState
     }
   }
 
-
   Future<
     void
   >
@@ -241,13 +240,17 @@ class _NuevoPacienteWidgetState
         usuarioId: _propietarioSeleccionado!.usuarioId!,
       );
 
-      print('Intentando crear mascota: ${nuevaMascota.toJson()}');
+      print(
+        'Intentando crear mascota: ${nuevaMascota.toJson()}',
+      );
 
       final mascotaCreada = await _apiService.createMascota(
         nuevaMascota,
       );
 
-      print('Mascota creada exitosamente con ID: ${mascotaCreada.mascotaId}');
+      print(
+        'Mascota creada exitosamente con ID: ${mascotaCreada.mascotaId}',
+      );
 
       // 3. Recargar lista de mascotas
       await context
@@ -255,7 +258,7 @@ class _NuevoPacienteWidgetState
             MascotaProvider
           >()
           .loadMascotas();
-      
+
       if (!mounted) return;
 
       ScaffoldMessenger.of(
@@ -820,8 +823,7 @@ class _NuevoPacienteWidgetState
                     ),
                   ],
                 ),
-                if (_propietarioSeleccionado!.telefono !=
-                    null) ...[
+                ...[
                   const SizedBox(
                     height: 4,
                   ),
@@ -836,7 +838,7 @@ class _NuevoPacienteWidgetState
                         width: 8,
                       ),
                       Text(
-                        _propietarioSeleccionado!.telefono!,
+                        _propietarioSeleccionado!.telefono,
                         style: TextStyle(
                           fontSize: 13,
                           color: AppColors.slate600Light,
@@ -845,8 +847,7 @@ class _NuevoPacienteWidgetState
                     ],
                   ),
                 ],
-                if (_propietarioSeleccionado!.direccion !=
-                    null) ...[
+                ...[
                   const SizedBox(
                     height: 4,
                   ),
@@ -862,7 +863,7 @@ class _NuevoPacienteWidgetState
                       ),
                       Expanded(
                         child: Text(
-                          _propietarioSeleccionado!.direccion!,
+                          _propietarioSeleccionado!.direccion,
                           style: TextStyle(
                             fontSize: 13,
                             color: AppColors.slate600Light,
