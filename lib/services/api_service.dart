@@ -18,159 +18,275 @@ class ApiService {
   // ============================================================================
 
   /// GET - Obtener lista de recursos
-  Future<List<T>> _getList<T>(
+  Future<
+    List<
+      T
+    >
+  >
+  _getList<
+    T
+  >(
     String endpoint,
-    T Function(Map<String, dynamic>) fromJson,
+    T Function(
+      Map<
+        String,
+        dynamic
+      >,
+    )
+    fromJson,
   ) async {
     try {
       final response = await http
           .get(
-            Uri.parse('${ApiConfig.baseUrl}$endpoint'),
+            Uri.parse(
+              '${ApiConfig.baseUrl}/$endpoint',
+            ),
             headers: ApiConfig.headers,
           )
-          .timeout(ApiConfig.timeout);
+          .timeout(
+            ApiConfig.timeout,
+          );
 
-      if (response.statusCode == 200) {
-        List<dynamic> data = json.decode(response.body);
-        return data.map((json) => fromJson(json)).toList();
+      if (response.statusCode ==
+          200) {
+        List<
+          dynamic
+        >
+        data = json.decode(
+          response.body,
+        );
+        return data
+            .map(
+              (
+                json,
+              ) => fromJson(
+                json,
+              ),
+            )
+            .toList();
       } else {
-        throw Exception('Error al obtener $endpoint: ${response.statusCode}');
+        throw Exception(
+          'Error al obtener $endpoint: ${response.statusCode}',
+        );
       }
-    } catch (e) {
-      throw Exception('Error de conexión: $e');
+    } catch (
+      e
+    ) {
+      throw Exception(
+        'Error de conexión: $e',
+      );
     }
   }
 
   /// GET - Obtener un recurso por ID
-  Future<T> _getById<T>(
+  Future<
+    T
+  >
+  _getById<
+    T
+  >(
     String endpoint,
     int id,
-    T Function(Map<String, dynamic>) fromJson,
+    T Function(
+      Map<
+        String,
+        dynamic
+      >,
+    )
+    fromJson,
   ) async {
     try {
       final response = await http
           .get(
-            Uri.parse('${ApiConfig.baseUrl}$endpoint/$id'),
+            Uri.parse(
+              '${ApiConfig.baseUrl}/$endpoint/$id',
+            ),
             headers: ApiConfig.headers,
           )
-          .timeout(ApiConfig.timeout);
+          .timeout(
+            ApiConfig.timeout,
+          );
 
-      if (response.statusCode == 200) {
-        return fromJson(json.decode(response.body));
-      } else if (response.statusCode == 404) {
-        throw Exception('$endpoint con ID $id no encontrado');
+      if (response.statusCode ==
+          200) {
+        return fromJson(
+          json.decode(
+            response.body,
+          ),
+        );
+      } else if (response.statusCode ==
+          404) {
+        throw Exception(
+          '$endpoint con ID $id no encontrado',
+        );
       } else {
-        throw Exception('Error al obtener $endpoint: ${response.statusCode}');
+        throw Exception(
+          'Error al obtener $endpoint: ${response.statusCode}',
+        );
       }
-    } catch (e) {
-      throw Exception('Error de conexión: $e');
+    } catch (
+      e
+    ) {
+      throw Exception(
+        'Error de conexión: $e',
+      );
     }
   }
 
   /// POST - Crear un recurso
-  Future<T> _create<T>(
+  Future<
+    T
+  >
+  _create<
+    T
+  >(
     String endpoint,
-    Map<String, dynamic> data,
-    T Function(Map<String, dynamic>) fromJson,
+    Map<
+      String,
+      dynamic
+    >
+    data,
+    T Function(
+      Map<
+        String,
+        dynamic
+      >,
+    )
+    fromJson,
   ) async {
     try {
-      final url = '${ApiConfig.baseUrl}$endpoint';
-      print('POST to $url');
-      print('Data: ${json.encode(data)}');
+      print(
+        'POST to ${ApiConfig.baseUrl}/$endpoint',
+      );
+      print(
+        'Data: ${json.encode(data)}',
+      );
 
-      final client = http.Client();
-      
-      try {
-        // Enviar POST
-        final response = await client
-            .post(
-              Uri.parse(url),
-              headers: ApiConfig.headers,
-              body: json.encode(data),
-            )
-            .timeout(ApiConfig.timeout);
+      final response = await http
+          .post(
+            Uri.parse(
+              '${ApiConfig.baseUrl}/$endpoint',
+            ),
+            headers: ApiConfig.headers,
+            body: json.encode(
+              data,
+            ),
+          )
+          .timeout(
+            ApiConfig.timeout,
+          );
 
-        print('Response status: ${response.statusCode}');
-        print('Response body: ${response.body}');
+      print(
+        'Response status: ${response.statusCode}',
+      );
+      print(
+        'Response body: ${response.body}',
+      );
 
-        // Si es 307, 301, 302 - es un redirect temporal/permanente
-        if (response.statusCode == 307 || response.statusCode == 301 || response.statusCode == 302) {
-          // Extraer la nueva ubicación del header
-          final newLocation = response.headers['location'];
-          print('Redirect detected to: $newLocation');
-          
-          if (newLocation != null) {
-            // Intentar con la nueva URL
-            print('Siguiendo redirect a: $newLocation');
-            final redirectResponse = await client
-                .post(
-                  Uri.parse(newLocation),
-                  headers: ApiConfig.headers,
-                  body: json.encode(data),
-                )
-                .timeout(ApiConfig.timeout);
-            
-            print('Redirect response status: ${redirectResponse.statusCode}');
-            print('Redirect response body: ${redirectResponse.body}');
-            
-            if (redirectResponse.statusCode == 200 || redirectResponse.statusCode == 201) {
-              return fromJson(json.decode(redirectResponse.body));
-            }
-          }
-        }
-
-        if (response.statusCode == 200 || response.statusCode == 201) {
-          return fromJson(json.decode(response.body));
-        } else {
-          throw Exception('Error al crear en $endpoint: ${response.statusCode}. Respuesta: ${response.body}');
-        }
-      } finally {
-        client.close();
+      if (response.statusCode ==
+              200 ||
+          response.statusCode ==
+              201) {
+        return fromJson(
+          json.decode(
+            response.body,
+          ),
+        );
+      } else {
+        throw Exception(
+          'Error al crear en $endpoint: ${response.statusCode}. Respuesta: ${response.body}',
+        );
       }
-    } catch (e) {
-      throw Exception('Error de conexión: $e');
+    } catch (
+      e
+    ) {
+      throw Exception(
+        'Error de conexión: $e',
+      );
     }
   }
 
   /// PUT - Actualizar un recurso
-  Future<void> _update<T>(
+  Future<
+    void
+  >
+  _update<
+    T
+  >(
     String endpoint,
     int id,
-    Map<String, dynamic> data,
+    Map<
+      String,
+      dynamic
+    >
+    data,
   ) async {
     try {
       final response = await http
           .put(
-            Uri.parse('${ApiConfig.baseUrl}$endpoint/$id'),
+            Uri.parse(
+              '${ApiConfig.baseUrl}/$endpoint/$id',
+            ),
             headers: ApiConfig.headers,
-            body: json.encode(data),
+            body: json.encode(
+              data,
+            ),
           )
-          .timeout(ApiConfig.timeout);
+          .timeout(
+            ApiConfig.timeout,
+          );
 
-      if (response.statusCode != 204 && response.statusCode != 200) {
+      if (response.statusCode !=
+              204 &&
+          response.statusCode !=
+              200) {
         throw Exception(
-            'Error al actualizar $endpoint: ${response.statusCode}');
+          'Error al actualizar $endpoint: ${response.statusCode}',
+        );
       }
-    } catch (e) {
-      throw Exception('Error de conexión: $e');
+    } catch (
+      e
+    ) {
+      throw Exception(
+        'Error de conexión: $e',
+      );
     }
   }
 
   /// DELETE - Eliminar un recurso
-  Future<void> _delete(String endpoint, int id) async {
+  Future<
+    void
+  >
+  _delete(
+    String endpoint,
+    int id,
+  ) async {
     try {
       final response = await http
           .delete(
-            Uri.parse('${ApiConfig.baseUrl}$endpoint/$id'),
+            Uri.parse(
+              '${ApiConfig.baseUrl}/$endpoint/$id',
+            ),
             headers: ApiConfig.headers,
           )
-          .timeout(ApiConfig.timeout);
+          .timeout(
+            ApiConfig.timeout,
+          );
 
-      if (response.statusCode != 204 && response.statusCode != 200) {
-        throw Exception('Error al eliminar $endpoint: ${response.statusCode}');
+      if (response.statusCode !=
+              204 &&
+          response.statusCode !=
+              200) {
+        throw Exception(
+          'Error al eliminar $endpoint: ${response.statusCode}',
+        );
       }
-    } catch (e) {
-      throw Exception('Error de conexión: $e');
+    } catch (
+      e
+    ) {
+      throw Exception(
+        'Error de conexión: $e',
+      );
     }
   }
 
@@ -178,165 +294,629 @@ class ApiService {
   // ALERGIAS
   // ============================================================================
 
-  Future<List<Alergia>> getAlergias() =>
-      _getList('Alergias', (json) => Alergia.fromJson(json));
+  Future<
+    List<
+      Alergia
+    >
+  >
+  getAlergias() => _getList(
+    'Alergias',
+    (
+      json,
+    ) => Alergia.fromJson(
+      json,
+    ),
+  );
 
-  Future<Alergia> getAlergiaById(int id) =>
-      _getById('Alergias', id, (json) => Alergia.fromJson(json));
+  Future<
+    Alergia
+  >
+  getAlergiaById(
+    int id,
+  ) => _getById(
+    'Alergias',
+    id,
+    (
+      json,
+    ) => Alergia.fromJson(
+      json,
+    ),
+  );
 
-  Future<Alergia> createAlergia(Alergia alergia) =>
-      _create('Alergias', alergia.toJson(), (json) => Alergia.fromJson(json));
+  Future<
+    Alergia
+  >
+  createAlergia(
+    Alergia alergia,
+  ) => _create(
+    'Alergias',
+    alergia.toJson(),
+    (
+      json,
+    ) => Alergia.fromJson(
+      json,
+    ),
+  );
 
-  Future<void> updateAlergia(int id, Alergia alergia) =>
-      _update('Alergias', id, alergia.toJson());
+  Future<
+    void
+  >
+  updateAlergia(
+    int id,
+    Alergia alergia,
+  ) => _update(
+    'Alergias',
+    id,
+    alergia.toJson(),
+  );
 
-  Future<void> deleteAlergia(int id) => _delete('Alergias', id);
+  Future<
+    void
+  >
+  deleteAlergia(
+    int id,
+  ) => _delete(
+    'Alergias',
+    id,
+  );
 
   // ============================================================================
   // CITAS
   // ============================================================================
 
-  Future<List<Cita>> getCitas() =>
-      _getList('Citas', (json) => Cita.fromJson(json));
+  Future<
+    List<
+      Cita
+    >
+  >
+  getCitas() => _getList(
+    'Citas',
+    (
+      json,
+    ) => Cita.fromJson(
+      json,
+    ),
+  );
 
-  Future<Cita> getCitaById(int id) =>
-      _getById('Citas', id, (json) => Cita.fromJson(json));
+  Future<
+    Cita
+  >
+  getCitaById(
+    int id,
+  ) => _getById(
+    'Citas',
+    id,
+    (
+      json,
+    ) => Cita.fromJson(
+      json,
+    ),
+  );
 
-  Future<Cita> createCita(Cita cita) =>
-      _create('Citas', cita.toJson(), (json) => Cita.fromJson(json));
+  Future<
+    Cita
+  >
+  createCita(
+    Cita cita,
+  ) => _create(
+    'Citas',
+    cita.toJson(),
+    (
+      json,
+    ) => Cita.fromJson(
+      json,
+    ),
+  );
 
-  Future<void> updateCita(int id, Cita cita) =>
-      _update('Citas', id, cita.toJsonUpdate());
+  Future<
+    void
+  >
+  updateCita(
+    int id,
+    Cita cita,
+  ) => _update(
+    'Citas',
+    id,
+    cita.toJsonUpdate(),
+  );
 
-  Future<void> deleteCita(int id) => _delete('Citas', id);
+  Future<
+    void
+  >
+  deleteCita(
+    int id,
+  ) => _delete(
+    'Citas',
+    id,
+  );
 
   // ============================================================================
   // HISTORIALES MÉDICOS
   // ============================================================================
 
-  Future<List<HistorialMedico>> getHistorialesMedicos() =>
-      _getList('HistorialesMedicos', (json) => HistorialMedico.fromJson(json));
+  Future<
+    List<
+      HistorialMedico
+    >
+  >
+  getHistorialesMedicos() => _getList(
+    'HistorialesMedicos',
+    (
+      json,
+    ) => HistorialMedico.fromJson(
+      json,
+    ),
+  );
 
-  Future<HistorialMedico> getHistorialMedicoById(int id) => _getById(
-      'HistorialesMedicos', id, (json) => HistorialMedico.fromJson(json));
+  Future<
+    HistorialMedico
+  >
+  getHistorialMedicoById(
+    int id,
+  ) => _getById(
+    'HistorialesMedicos',
+    id,
+    (
+      json,
+    ) => HistorialMedico.fromJson(
+      json,
+    ),
+  );
 
-  Future<HistorialMedico> createHistorialMedico(HistorialMedico historial) =>
-      _create('HistorialesMedicos', historial.toJson(),
-          (json) => HistorialMedico.fromJson(json));
+  Future<
+    HistorialMedico
+  >
+  createHistorialMedico(
+    HistorialMedico historial,
+  ) => _create(
+    'HistorialesMedicos',
+    historial.toJson(),
+    (
+      json,
+    ) => HistorialMedico.fromJson(
+      json,
+    ),
+  );
 
-  Future<void> updateHistorialMedico(int id, HistorialMedico historial) =>
-      _update('HistorialesMedicos', id, historial.toJson());
+  Future<
+    void
+  >
+  updateHistorialMedico(
+    int id,
+    HistorialMedico historial,
+  ) => _update(
+    'HistorialesMedicos',
+    id,
+    historial.toJson(),
+  );
 
-  Future<void> deleteHistorialMedico(int id) =>
-      _delete('HistorialesMedicos', id);
+  Future<
+    void
+  >
+  deleteHistorialMedico(
+    int id,
+  ) => _delete(
+    'HistorialesMedicos',
+    id,
+  );
 
   // ============================================================================
   // MASCOTAS
   // ============================================================================
 
-  Future<List<Mascota>> getMascotas() =>
-      _getList('Mascotas', (json) => Mascota.fromJson(json));
+  Future<
+    List<
+      Mascota
+    >
+  >
+  getMascotas() => _getList(
+    'Mascotas',
+    (
+      json,
+    ) => Mascota.fromJson(
+      json,
+    ),
+  );
 
-  Future<Mascota> getMascotaById(int id) =>
-      _getById('Mascotas', id, (json) => Mascota.fromJson(json));
+  Future<
+    Mascota
+  >
+  getMascotaById(
+    int id,
+  ) => _getById(
+    'Mascotas',
+    id,
+    (
+      json,
+    ) => Mascota.fromJson(
+      json,
+    ),
+  );
 
-  Future<Mascota> createMascota(Mascota mascota) =>
-      _create('Mascotas', mascota.toJson(), (json) => Mascota.fromJson(json));
+  Future<
+    Mascota
+  >
+  createMascota(
+    Mascota mascota,
+  ) => _create(
+    'Mascotas',
+    mascota.toJson(),
+    (
+      json,
+    ) => Mascota.fromJson(
+      json,
+    ),
+  );
 
-  Future<void> updateMascota(int id, Mascota mascota) =>
-      _update('Mascotas', id, mascota.toJson());
+  Future<
+    void
+  >
+  updateMascota(
+    int id,
+    Mascota mascota,
+  ) => _update(
+    'Mascotas',
+    id,
+    mascota.toJson(),
+  );
 
-  Future<void> deleteMascota(int id) => _delete('Mascotas', id);
+  Future<
+    void
+  >
+  deleteMascota(
+    int id,
+  ) => _delete(
+    'Mascotas',
+    id,
+  );
 
   // ============================================================================
   // MASCOTAS-ALERGIAS
   // ============================================================================
 
-  Future<List<MascotaAlergia>> getMascotasAlergias() =>
-      _getList('MascotasAlergias', (json) => MascotaAlergia.fromJson(json));
+  Future<
+    List<
+      MascotaAlergia
+    >
+  >
+  getMascotasAlergias() => _getList(
+    'MascotasAlergias',
+    (
+      json,
+    ) => MascotaAlergia.fromJson(
+      json,
+    ),
+  );
 
-  Future<MascotaAlergia> getMascotaAlergiaById(int id) => _getById(
-      'MascotasAlergias', id, (json) => MascotaAlergia.fromJson(json));
+  Future<
+    MascotaAlergia
+  >
+  getMascotaAlergiaById(
+    int id,
+  ) => _getById(
+    'MascotasAlergias',
+    id,
+    (
+      json,
+    ) => MascotaAlergia.fromJson(
+      json,
+    ),
+  );
 
-  Future<MascotaAlergia> createMascotaAlergia(MascotaAlergia mascotaAlergia) =>
-      _create('MascotasAlergias', mascotaAlergia.toJson(),
-          (json) => MascotaAlergia.fromJson(json));
+  Future<
+    MascotaAlergia
+  >
+  createMascotaAlergia(
+    MascotaAlergia mascotaAlergia,
+  ) => _create(
+    'MascotasAlergias',
+    mascotaAlergia.toJson(),
+    (
+      json,
+    ) => MascotaAlergia.fromJson(
+      json,
+    ),
+  );
 
-  Future<void> updateMascotaAlergia(int id, MascotaAlergia mascotaAlergia) =>
-      _update('MascotasAlergias', id, mascotaAlergia.toJson());
+  Future<
+    void
+  >
+  updateMascotaAlergia(
+    int id,
+    MascotaAlergia mascotaAlergia,
+  ) => _update(
+    'MascotasAlergias',
+    id,
+    mascotaAlergia.toJson(),
+  );
 
-  Future<void> deleteMascotaAlergia(int id) => _delete('MascotasAlergias', id);
+  Future<
+    void
+  >
+  deleteMascotaAlergia(
+    int id,
+  ) => _delete(
+    'MascotasAlergias',
+    id,
+  );
 
   // ============================================================================
   // MASCOTAS-VACUNAS
   // ============================================================================
 
-  Future<List<MascotaVacuna>> getMascotasVacunas() =>
-      _getList('MascotasVacunas', (json) => MascotaVacuna.fromJson(json));
+  Future<
+    List<
+      MascotaVacuna
+    >
+  >
+  getMascotasVacunas() => _getList(
+    'MascotasVacunas',
+    (
+      json,
+    ) => MascotaVacuna.fromJson(
+      json,
+    ),
+  );
 
-  Future<MascotaVacuna> getMascotaVacunaById(int id) =>
-      _getById('MascotasVacunas', id, (json) => MascotaVacuna.fromJson(json));
+  Future<
+    MascotaVacuna
+  >
+  getMascotaVacunaById(
+    int id,
+  ) => _getById(
+    'MascotasVacunas',
+    id,
+    (
+      json,
+    ) => MascotaVacuna.fromJson(
+      json,
+    ),
+  );
 
-  Future<MascotaVacuna> createMascotaVacuna(MascotaVacuna mascotaVacuna) =>
-      _create('MascotasVacunas', mascotaVacuna.toJson(),
-          (json) => MascotaVacuna.fromJson(json));
+  Future<
+    MascotaVacuna
+  >
+  createMascotaVacuna(
+    MascotaVacuna mascotaVacuna,
+  ) => _create(
+    'MascotasVacunas',
+    mascotaVacuna.toJson(),
+    (
+      json,
+    ) => MascotaVacuna.fromJson(
+      json,
+    ),
+  );
 
-  Future<void> updateMascotaVacuna(int id, MascotaVacuna mascotaVacuna) =>
-      _update('MascotasVacunas', id, mascotaVacuna.toJson());
+  Future<
+    void
+  >
+  updateMascotaVacuna(
+    int id,
+    MascotaVacuna mascotaVacuna,
+  ) => _update(
+    'MascotasVacunas',
+    id,
+    mascotaVacuna.toJson(),
+  );
 
-  Future<void> deleteMascotaVacuna(int id) => _delete('MascotasVacunas', id);
+  Future<
+    void
+  >
+  deleteMascotaVacuna(
+    int id,
+  ) => _delete(
+    'MascotasVacunas',
+    id,
+  );
 
   // ============================================================================
   // USUARIOS
   // ============================================================================
 
-  Future<List<Usuario>> getUsuarios() =>
-      _getList('Usuarios', (json) => Usuario.fromJson(json));
+  Future<
+    List<
+      Usuario
+    >
+  >
+  getUsuarios() => _getList(
+    'Usuarios',
+    (
+      json,
+    ) => Usuario.fromJson(
+      json,
+    ),
+  );
 
-  Future<Usuario> getUsuarioById(int id) =>
-      _getById('Usuarios', id, (json) => Usuario.fromJson(json));
+  Future<
+    Usuario
+  >
+  getUsuarioById(
+    int id,
+  ) => _getById(
+    'Usuarios',
+    id,
+    (
+      json,
+    ) => Usuario.fromJson(
+      json,
+    ),
+  );
 
-  Future<Usuario> createUsuario(Usuario usuario) =>
-      _create('Usuarios', usuario.toJson(), (json) => Usuario.fromJson(json));
+  Future<
+    Usuario
+  >
+  createUsuario(
+    Usuario usuario,
+  ) => _create(
+    'Usuarios',
+    usuario.toJson(),
+    (
+      json,
+    ) => Usuario.fromJson(
+      json,
+    ),
+  );
 
-  Future<void> updateUsuario(int id, Usuario usuario) =>
-      _update('Usuarios', id, usuario.toJson());
+  Future<
+    void
+  >
+  updateUsuario(
+    int id,
+    Usuario usuario,
+  ) => _update(
+    'Usuarios',
+    id,
+    usuario.toJson(),
+  );
 
-  Future<void> deleteUsuario(int id) => _delete('Usuarios', id);
+  Future<
+    void
+  >
+  deleteUsuario(
+    int id,
+  ) => _delete(
+    'Usuarios',
+    id,
+  );
 
   // ============================================================================
   // VACUNAS
   // ============================================================================
 
-  Future<List<Vacuna>> getVacunas() =>
-      _getList('Vacunas', (json) => Vacuna.fromJson(json));
+  Future<
+    List<
+      Vacuna
+    >
+  >
+  getVacunas() => _getList(
+    'Vacunas',
+    (
+      json,
+    ) => Vacuna.fromJson(
+      json,
+    ),
+  );
 
-  Future<Vacuna> getVacunaById(int id) =>
-      _getById('Vacunas', id, (json) => Vacuna.fromJson(json));
+  Future<
+    Vacuna
+  >
+  getVacunaById(
+    int id,
+  ) => _getById(
+    'Vacunas',
+    id,
+    (
+      json,
+    ) => Vacuna.fromJson(
+      json,
+    ),
+  );
 
-  Future<Vacuna> createVacuna(Vacuna vacuna) =>
-      _create('Vacunas', vacuna.toJson(), (json) => Vacuna.fromJson(json));
+  Future<
+    Vacuna
+  >
+  createVacuna(
+    Vacuna vacuna,
+  ) => _create(
+    'Vacunas',
+    vacuna.toJson(),
+    (
+      json,
+    ) => Vacuna.fromJson(
+      json,
+    ),
+  );
 
-  Future<void> updateVacuna(int id, Vacuna vacuna) =>
-      _update('Vacunas', id, vacuna.toJson());
+  Future<
+    void
+  >
+  updateVacuna(
+    int id,
+    Vacuna vacuna,
+  ) => _update(
+    'Vacunas',
+    id,
+    vacuna.toJson(),
+  );
 
-  Future<void> deleteVacuna(int id) => _delete('Vacunas', id);
+  Future<
+    void
+  >
+  deleteVacuna(
+    int id,
+  ) => _delete(
+    'Vacunas',
+    id,
+  );
 
   // ============================================================================
   // VETERINARIOS
   // ============================================================================
 
-  Future<List<Veterinario>> getVeterinarios() =>
-      _getList('Veterinarios', (json) => Veterinario.fromJson(json));
+  Future<
+    List<
+      Veterinario
+    >
+  >
+  getVeterinarios() => _getList(
+    'Veterinarios',
+    (
+      json,
+    ) => Veterinario.fromJson(
+      json,
+    ),
+  );
 
-  Future<Veterinario> getVeterinarioById(int id) =>
-      _getById('Veterinarios', id, (json) => Veterinario.fromJson(json));
+  Future<
+    Veterinario
+  >
+  getVeterinarioById(
+    int id,
+  ) => _getById(
+    'Veterinarios',
+    id,
+    (
+      json,
+    ) => Veterinario.fromJson(
+      json,
+    ),
+  );
 
-  Future<Veterinario> createVeterinario(Veterinario veterinario) => _create(
-      'Veterinarios', veterinario.toJson(), (json) => Veterinario.fromJson(json));
+  Future<
+    Veterinario
+  >
+  createVeterinario(
+    Veterinario veterinario,
+  ) => _create(
+    'Veterinarios',
+    veterinario.toJson(),
+    (
+      json,
+    ) => Veterinario.fromJson(
+      json,
+    ),
+  );
 
-  Future<void> updateVeterinario(int id, Veterinario veterinario) =>
-      _update('Veterinarios', id, veterinario.toJson());
+  Future<
+    void
+  >
+  updateVeterinario(
+    int id,
+    Veterinario veterinario,
+  ) => _update(
+    'Veterinarios',
+    id,
+    veterinario.toJson(),
+  );
 
-  Future<void> deleteVeterinario(int id) => _delete('Veterinarios', id);
+  Future<
+    void
+  >
+  deleteVeterinario(
+    int id,
+  ) => _delete(
+    'Veterinarios',
+    id,
+  );
 }

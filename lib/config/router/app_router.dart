@@ -19,6 +19,7 @@ import 'package:vet_smart_ids/models/cita.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/role_selection',
+  //initialLocation: '/test_api',
   routes: [
     // Ruta inicial: Selección de rol
     GoRoute(
