@@ -21,6 +21,9 @@ export 'package:vet_smart_ids/presentation/usuario/mis_mascotas/mis_mascotas.dar
 //Widget de perfil de la mascota - Jaime
 export 'package:vet_smart_ids/presentation/usuario/perfil_mascota/perfil_mascota.dart';
 
+//Widget de expediente de la mascota - Usuario
+export 'package:vet_smart_ids/presentation/usuario/expediente_mascota/expediente_mascota.dart';
+
 // Widget de detalle de cita para usuario
 export 'package:vet_smart_ids/presentation/usuario/cita_detalles_usuario/cita_detalles_usuario.dart';
 

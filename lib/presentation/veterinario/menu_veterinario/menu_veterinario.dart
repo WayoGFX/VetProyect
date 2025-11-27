@@ -62,12 +62,6 @@ class VetMainMenuScreen
       icon: Icons.supervised_user_circle_rounded,
       route: '/lista_pacientes',
     ),
-    MenuItemData(
-      title: 'ERROR',
-      subtitle: 'Esto es para demostrar que sirven los manejos de errores',
-      icon: Icons.error,
-      route: '/ruta_para_sacar_10',
-    ),
   ];
 
   @override

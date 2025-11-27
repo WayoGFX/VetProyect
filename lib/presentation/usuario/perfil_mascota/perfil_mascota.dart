@@ -1,55 +1,15 @@
-// perfil_mascota.dart
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import 'package:vet_smart_ids/core/app_colors.dart';
 import 'package:vet_smart_ids/presentation/usuario/navbar/navbar_usuario.dart';
+import 'package:vet_smart_ids/providers/mascota_provider.dart';
 
-// Modelo de datos para el perfil de una mascota
-class PetProfile {
-  // Propiedades inmutables (final)
-  final String name;
-  final String breed;
-  final String owner;
-  final String imageUrl;
-  final String species;
-  final String birthDate;
-  final String contact;
-  final String address;
-  final String observations;
-
-  // Constructor constante con parámetros requeridos
-  const PetProfile({
-    required this.name,
-    required this.breed,
-    required this.owner,
-    required this.imageUrl,
-    required this.species,
-    required this.birthDate,
-    required this.contact,
-    required this.address,
-    required this.observations,
-  });
-}
-
-// Datos de ejemplo para el perfil
-const buddyProfile = PetProfile(
-  name: 'Buddy',
-  breed: 'Golden Retriever',
-  owner: 'Alex Ramirez',
-  imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC-WQqClYYZJDeV4_u2nr20bAFtlb13-wphYnNvigeWhd2KtP9r_DR3OOgO_xkclbWrVFY_QFKY94-fh3A0UTNHfAHfzLjzCkHONu0Pe_bFPDT4cAaOw9nqmDEw9esKWKpQpBvKGVJyLKDKQiUU0GqWNdY_dnbFq-yxxvytcBwz_7-jAukk5xkPNUUKs1kobM-6f5_Mht1eLF85j0hGCOhFEtduvnXHKIdchdvpms-1ypR_-6aooLq-avoiFBQFrGjkgTxV2oFOrjg',
-  species: 'Canino',
-  birthDate: '15 de Marzo de 2018',
-  contact: '+52 55 1234 5678',
-  address: 'Calle Principal 123, Ciudad de México',
-  observations: 'Buddy es un perro muy activo y amigable. Requiere ejercicio diario y una dieta balanceada',
-);
-
-// Pantalla principal del perfil de la mascota
-class PerfilMascotaScreen
-    extends
-        StatefulWidget {
-  // Nombre estático para la gestión de rutas
+/// Pantalla del perfil de mascota del usuario
+/// Muestra toda la información de la mascota seleccionada
+class PerfilMascotaScreen extends StatefulWidget {
+  /// Nombre estático para la gestión de rutas
   static const String name = 'perfil_mascota_screen';
 
   const PerfilMascotaScreen({
@@ -57,92 +17,183 @@ class PerfilMascotaScreen
   });
 
   @override
-  State<
-    PerfilMascotaScreen
-  >
-  createState() => _PerfilMascotaScreenState();
+  State<PerfilMascotaScreen> createState() => _PerfilMascotaScreenState();
 }
 
-class _PerfilMascotaScreenState
-    extends
-        State<
-          PerfilMascotaScreen
-        > {
+class _PerfilMascotaScreenState extends State<PerfilMascotaScreen> {
   @override
-  Widget build(
-    BuildContext context,
-  ) {
-    const pet = buddyProfile;
+  void initState() {
+    super.initState();
+    // Cargar la información completa de la mascota después de que se construya el widget
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<MascotaProvider>();
+      if (provider.mascotaSeleccionada != null) {
+        provider.loadPacienteDetalle(provider.mascotaSeleccionada!.mascotaId!);
+      }
+    });
+  }
 
-    // Scaffold usa los estilos del tema global
+  String _calcularEdad(DateTime fechaNacimiento) {
+    final ahora = DateTime.now();
+    final diferencia = ahora.difference(fechaNacimiento);
+    final anos = (diferencia.inDays / 365).floor();
+    final meses = ((diferencia.inDays % 365) / 30).floor();
+    if (anos > 0) {
+      return '$anos ${anos == 1 ? 'año' : 'años'}';
+    } else if (meses > 0) {
+      return '$meses ${meses == 1 ? 'mes' : 'meses'}';
+    } else {
+      final dias = diferencia.inDays;
+      return '$dias ${dias == 1 ? 'día' : 'días'}';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new,
-          ),
-          onPressed: () => context.pop(), // Vuelve a la lista de mascotas
+          icon: const Icon(Icons.arrow_back_ios_new),
+          onPressed: () => context.pop(),
         ),
-        title: const Text(
-          'Perfil de la Mascota',
-        ),
+        title: const Text('Perfil de la Mascota'),
         centerTitle: true,
       ),
-      // Permite el desplazamiento vertical del contenido
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Sección superior: Foto y nombre
-            Padding(
-              padding: const EdgeInsets.all(
-                16.0,
-              ),
+      body: Consumer<MascotaProvider>(
+        builder: (context, mascotaProvider, child) {
+          // Mostrar indicador de carga
+          if (mascotaProvider.isLoading) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+
+          // Mostrar error si ocurre
+          if (mascotaProvider.errorMessage != null) {
+            return Center(
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Imagen de perfil redondeada
-                  CircleAvatar(
-                    radius: 64,
-                    backgroundImage: NetworkImage(
-                      pet.imageUrl,
-                    ),
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Colors.red.shade300,
                   ),
-                  const SizedBox(
-                    height: 16,
-                  ),
+                  const SizedBox(height: 16),
                   Text(
-                    pet.name,
-                    // Usa el estilo 'titleLarge' del tema
-                    style:
-                        Theme.of(
-                          context,
-                        ).textTheme.titleLarge?.copyWith(
-                          fontSize: 24,
-                        ),
+                    'Error al cargar información de la mascota',
+                    style: Theme.of(context).textTheme.titleLarge,
                   ),
+                  const SizedBox(height: 8),
                   Text(
-                    pet.breed,
-                    style: TextStyle(
-                      color: AppColors.slate500Light,
-                    ),
+                    mascotaProvider.errorMessage!,
+                    textAlign: TextAlign.center,
                   ),
-                  Text(
-                    'Propietario: ${pet.owner}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.slate500Light,
-                    ),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      if (mascotaProvider.mascotaSeleccionada != null) {
+                        mascotaProvider.loadPacienteDetalle(
+                          mascotaProvider.mascotaSeleccionada!.mascotaId!,
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Reintentar'),
                   ),
                 ],
               ),
-            ),
+            );
+          }
 
-            // Sección de tarjetas de información
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16.0,
-              ),
+          final mascota = mascotaProvider.mascotaSeleccionada;
+          if (mascota == null) {
+            return Center(
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  Icon(
+                    Icons.pets_outlined,
+                    size: 64,
+                    color: AppColors.slate400Light,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Selecciona una mascota',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ],
+              ),
+            );
+          }
+
+          final edad = _calcularEdad(mascota.fechaNacimiento);
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.only(bottom: 100),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Sección superior: Foto y nombre
+                  Center(
+                    child: Column(
+                      children: [
+                        // Imagen de perfil redondeada
+                        CircleAvatar(
+                          radius: 64,
+                          backgroundColor: AppColors.primary20,
+                          backgroundImage: mascota.fotoUrl != null &&
+                                  mascota.fotoUrl!.isNotEmpty
+                              ? NetworkImage(mascota.fotoUrl!)
+                              : null,
+                          child: mascota.fotoUrl == null ||
+                                  mascota.fotoUrl!.isEmpty
+                              ? Icon(
+                                  Icons.pets,
+                                  size: 64,
+                                  color: AppColors.primary,
+                                )
+                              : null,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          mascota.nombre,
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontSize: 24,
+                              ),
+                        ),
+                        Text(
+                          mascota.raza,
+                          style: TextStyle(
+                            color: AppColors.slate500Light,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary20,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            'Edad: $edad',
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
                   // Tarjeta con información general
                   _InfoCard(
                     title: 'Información General',
@@ -150,84 +201,98 @@ class _PerfilMascotaScreenState
                       children: [
                         _InfoRow(
                           label: 'Especie',
-                          value: pet.species,
+                          value: mascota.especie,
                         ),
                         _InfoRow(
                           label: 'Raza',
-                          value: pet.breed,
+                          value: mascota.raza,
                         ),
                         _InfoRow(
-                          label: 'Nacimiento',
-                          value: pet.birthDate,
+                          label: 'Fecha de Nacimiento',
+                          value: DateFormat('dd/MM/yyyy')
+                              .format(mascota.fechaNacimiento),
                         ),
                         _InfoRow(
-                          label: 'Contacto',
-                          value: pet.contact,
-                        ),
-                        _InfoRow(
-                          label: 'Dirección',
-                          value: pet.address,
+                          label: 'ID Mascota',
+                          value: mascota.mascotaId?.toString() ?? 'N/A',
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(
-                    height: 24,
-                  ),
+
+                  const SizedBox(height: 24),
+
                   // Tarjeta de observaciones
-                  _InfoCard(
-                    title: 'Observaciones',
-                    child: Text(
-                      pet.observations,
-                      style:
-                          Theme.of(
-                            context,
-                          ).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.slate500Light,
-                          ),
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 24,
-                  ),
-                  // Botón para historial médico
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () {},
-                      icon: const Icon(
-                        Icons.receipt_long,
-                      ),
-                      label: const Text(
-                        'Ver Historial Médico Completo',
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        foregroundColor: AppColors.white, // Color del texto e ícono
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 16,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            12,
-                          ),
-                        ),
+                  if (mascota.observaciones != null &&
+                      mascota.observaciones!.isNotEmpty)
+                    _InfoCard(
+                      title: 'Observaciones',
+                      child: Text(
+                        mascota.observaciones!,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppColors.slate500Light,
+                            ),
                       ),
                     ),
+
+                  if (mascota.observaciones != null &&
+                      mascota.observaciones!.isNotEmpty)
+                    const SizedBox(height: 24),
+
+                  // Botones: historial médico y abrir expediente
+                  Column(
+                    children: [
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            // Aquí puedes navegar a la pantalla de historial completo
+                            // context.push('/historial_medico_completo');
+                          },
+                          icon: const Icon(Icons.receipt_long),
+                          label: const Text('Ver Historial Médico Completo'),
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor: AppColors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            // Navegar al expediente de la mascota
+                            context.push('/expediente_mascota');
+                          },
+                          icon: const Icon(Icons.folder_shared_outlined),
+                          label: const Text('Abrir Expediente'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(
-                    height: 24,
-                  ),
+
+                  const SizedBox(height: 24),
                 ],
               ),
             ),
-          ],
-        ),
+          );
+        },
       ),
-
-      // navbar
+      // Navbar
       bottomNavigationBar: const UserNavbar(
-        // Le pasamos la ruta estática para que el navbar resalte el ícono "Inicio".
-        currentRoute: '/mis_mascotas',
+        currentRoute: '/perfil_mascota',
       ),
     );
   }
@@ -235,10 +300,8 @@ class _PerfilMascotaScreenState
 
 // Widgets Reutilizables
 
-// Tarjeta de contenedor para secciones de información
-class _InfoCard
-    extends
-        StatelessWidget {
+/// Tarjeta de contenedor para secciones de información
+class _InfoCard extends StatelessWidget {
   final String title;
   final Widget child;
 
@@ -248,43 +311,31 @@ class _InfoCard
   });
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
+  Widget build(BuildContext context) {
     return Container(
-      width: double.infinity, // Ocupa todo el ancho
-      padding: const EdgeInsets.all(
-        16.0,
-      ),
+      width: double.infinity,
+      padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
         color: AppColors.primary20,
-        borderRadius: BorderRadius.circular(
-          16.0,
-        ),
+        borderRadius: BorderRadius.circular(16.0),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium, // Estilo del tema
+            style: Theme.of(context).textTheme.titleMedium,
           ),
-          const SizedBox(
-            height: 12,
-          ),
-          child, // Contenido de la tarjeta
+          const SizedBox(height: 12),
+          child,
         ],
       ),
     );
   }
 }
 
-// Fila para mostrar una etiqueta y un valor
-class _InfoRow
-    extends
-        StatelessWidget {
+/// Fila para mostrar una etiqueta y un valor
+class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
 
@@ -294,16 +345,11 @@ class _InfoRow
   });
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
+  Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        vertical: 8.0,
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          // Borde superior para separar filas
           border: Border(
             top: BorderSide(
               color: AppColors.primary20,
@@ -312,9 +358,7 @@ class _InfoRow
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.only(
-            top: 8.0,
-          ),
+          padding: const EdgeInsets.only(top: 8.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -324,15 +368,11 @@ class _InfoRow
                   color: AppColors.slate500Light,
                 ),
               ),
-              // El valor ocupa el espacio restante y se alinea a la derecha
               Expanded(
                 child: Text(
                   value,
                   textAlign: TextAlign.right,
-                  style:
-                      Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.copyWith(
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w500,
                       ),
                 ),

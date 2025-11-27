@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:vet_smart_ids/core/app_colors.dart';
+import 'package:vet_smart_ids/models/cita.dart';
 import 'package:vet_smart_ids/presentation/usuario/navbar/navbar_usuario.dart'; // Paleta de colores de la aplicación
 
 class GestureUser
     extends
         StatefulWidget {
+  final Cita cita;
+
   const GestureUser({
-    Key? key,
-  }) : super(
-         key: key,
-       );
+    super.key,
+    required this.cita,
+  });
   static const String name = "cita detalle usuario";
 
   @override
@@ -34,6 +36,14 @@ class _AppointmentDetailPageState
           context,
         ).brightness ==
         Brightness.dark;
+
+    final formattedDate = _formatFechaEspanol(widget.cita.fechaHora);
+    
+    final statusColor = widget.cita.estado == 'Completada' || widget.cita.estado == 'Realizada'
+        ? AppColors.primary
+        : AppColors.secondary;
+    
+    final statusText = widget.cita.estado == 'Completada' ? 'Cita realizada' : widget.cita.estado;
 
     return Scaffold(
       backgroundColor: isDark
@@ -116,10 +126,23 @@ class _AppointmentDetailPageState
                           borderRadius: BorderRadius.circular(
                             9999,
                           ),
-                          child: Image.network(
-                            'https://lh3.googleusercontent.com/aida-public/AB6AXuBQWtZBWDo8FaFdszSnQZ1A1sz5LOz27ekmfaJiFeaWWld8DosqR5HWTG7CvKd4SHkqf6U8NupB41JAewX6eU_jCFIazCf65dfH6DDo9EFPSgG4aSRkGE6qgRgS4qKcvGe4w42QS3VflJqm3AULCJRs5FVofXS6N36V9uAPOCyLWv946ROYgj1GFZEHkMsBsbeL5Gozo_sJZhsDSa06_dctXmhwnswjjg_m_XDaBbditOqYMxpXn7OTjIZYLjFSAPo5K45EkcVGrjk',
-                            fit: BoxFit.cover,
-                          ),
+                          child: widget.cita.mascotaFotoUrl != null && widget.cita.mascotaFotoUrl!.isNotEmpty
+                              ? Image.network(
+                                  widget.cita.mascotaFotoUrl!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Icon(
+                                      Icons.pets,
+                                      color: AppColors.primary,
+                                      size: 32,
+                                    );
+                                  },
+                                )
+                              : Icon(
+                                  Icons.pets,
+                                  color: AppColors.primary,
+                                  size: 32,
+                                ),
                         ),
                       ),
                       const SizedBox(
@@ -129,7 +152,7 @@ class _AppointmentDetailPageState
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Max',
+                            widget.cita.mascotaNombre ?? 'Mascota',
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
@@ -139,7 +162,7 @@ class _AppointmentDetailPageState
                             ),
                           ),
                           Text(
-                            'Golden Retriever',
+                            'Cita agendada',
                             style: TextStyle(
                               color: isDark
                                   ? AppColors.slate600Light.withOpacity(
@@ -162,7 +185,7 @@ class _AppointmentDetailPageState
                     icon: Icons.calendar_month,
                     iconColor: AppColors.primary,
                     title: 'Fecha y Hora',
-                    subtitle: 'Lunes, 20 de Mayo de 2024 - 10:30 AM',
+                    subtitle: formattedDate,
                     isDark: isDark,
                   ),
                   const SizedBox(
@@ -174,7 +197,7 @@ class _AppointmentDetailPageState
                     icon: Icons.medical_services,
                     iconColor: AppColors.primary,
                     title: 'Motivo de la consulta',
-                    subtitle: 'Chequeo anual y vacunación',
+                    subtitle: widget.cita.motivo,
                     isDark: isDark,
                   ),
                   const SizedBox(
@@ -186,7 +209,7 @@ class _AppointmentDetailPageState
                     icon: Icons.person,
                     iconColor: AppColors.primary,
                     title: 'Veterinario Asignado',
-                    subtitle: 'Dr. Carlos Rodriguez',
+                    subtitle: widget.cita.veterinarioNombre ?? 'No asignado',
                     isDark: isDark,
                   ),
                 ],
@@ -224,14 +247,16 @@ class _AppointmentDetailPageState
                   Row(
                     children: [
                       Icon(
-                        Icons.check_circle, // Icono de completado
-                        color: AppColors.primary,
+                        widget.cita.estado == 'Completada' || widget.cita.estado == 'Realizada'
+                            ? Icons.check_circle
+                            : Icons.schedule,
+                        color: statusColor,
                       ),
                       const SizedBox(
                         width: 8,
                       ),
                       Text(
-                        'Cita realizada', // Título modificado
+                        statusText,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
@@ -247,7 +272,7 @@ class _AppointmentDetailPageState
                   ),
                   // Resumen de la cita realizada
                   Text(
-                    'El chequeo anual y la vacunación fueron completados satisfactoriamente.',
+                    widget.cita.citaDescripcion ?? 'Sin descripción adicional.',
                     style: TextStyle(
                       color: isDark
                           ? AppColors.slate600Light.withOpacity(
@@ -264,68 +289,69 @@ class _AppointmentDetailPageState
               height: 24,
             ),
 
-            // Contenedor para Notas adicionales (Sin cambios)
-            Container(
-              decoration: BoxDecoration(
-                color: isDark
-                    ? AppColors.textLight
-                    : AppColors.cardLight,
-                borderRadius: BorderRadius.circular(
+            // Contenedor para Notas adicionales
+            if (widget.cita.notas != null && widget.cita.notas!.isNotEmpty)
+              Container(
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppColors.textLight
+                      : AppColors.cardLight,
+                  borderRadius: BorderRadius.circular(
+                    24,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: isDark
+                          ? Colors.black26
+                          : AppColors.black05,
+                      blurRadius: 10,
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.all(
                   24,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: isDark
-                        ? Colors.black26
-                        : AppColors.black05,
-                    blurRadius: 10,
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.all(
-                24,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.description,
-                        color: AppColors.secondary,
-                      ),
-                      const SizedBox(
-                        width: 8,
-                      ),
-                      Text(
-                        'Notas Adicionales',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                          color: isDark
-                              ? AppColors.white
-                              : AppColors.textLight,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.description,
+                          color: AppColors.secondary,
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(
-                    height: 12,
-                  ),
-                  Text(
-                    'Max ha estado un poco decaído últimamente y ha perdido el apetito. Traer muestra de heces para análisis. Recordar revisar la cadera izquierda, mostró sensibilidad al tacto',
-                    style: TextStyle(
-                      color: isDark
-                          ? AppColors.slate600Light.withOpacity(
-                              0.7,
-                            )
-                          : AppColors.slate600Light,
-                      height: 1.4,
+                        const SizedBox(
+                          width: 8,
+                        ),
+                        Text(
+                          'Notas Adicionales',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: isDark
+                                ? AppColors.white
+                                : AppColors.textLight,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                    const SizedBox(
+                      height: 12,
+                    ),
+                    Text(
+                      widget.cita.notas!,
+                      style: TextStyle(
+                        color: isDark
+                            ? AppColors.slate600Light.withOpacity(
+                                0.7,
+                              )
+                            : AppColors.slate600Light,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
 
             const SizedBox(
               height: 32,
@@ -397,4 +423,41 @@ class _AppointmentDetailPageState
       ],
     );
   }
+
+  String _formatFechaEspanol(DateTime fecha) {
+    const diasSemana = [
+      'Lunes',
+      'Martes',
+      'Miércoles',
+      'Jueves',
+      'Viernes',
+      'Sábado',
+      'Domingo'
+    ];
+    
+    const meses = [
+      'Enero',
+      'Febrero',
+      'Marzo',
+      'Abril',
+      'Mayo',
+      'Junio',
+      'Julio',
+      'Agosto',
+      'Septiembre',
+      'Octubre',
+      'Noviembre',
+      'Diciembre'
+    ];
+    
+    final diaSemana = diasSemana[fecha.weekday - 1];
+    final mes = meses[fecha.month - 1];
+    final hour = fecha.hour;
+    final minute = fecha.minute.toString().padLeft(2, '0');
+    final period = hour >= 12 ? 'PM' : 'AM';
+    final hour12 = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
+    
+    return '$diaSemana, ${fecha.day} de $mes de ${fecha.year} - $hour12:$minute $period';
+  }
 }
+

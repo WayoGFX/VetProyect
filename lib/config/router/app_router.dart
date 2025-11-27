@@ -5,13 +5,15 @@ import 'package:vet_smart_ids/presentation/generales/register_vet/register_vet.d
 import 'package:vet_smart_ids/presentation/generales/role_selection/role_selection_screen.dart';
 import 'package:vet_smart_ids/presentation/generales/test_api/test_api_screen.dart';
 import 'package:vet_smart_ids/presentation/home/home_screen.dart';
-import 'package:vet_smart_ids/presentation/screens.dart';
+import 'package:vet_smart_ids/presentation/screens.dart'
+    hide
+        Cita;
 import 'package:vet_smart_ids/presentation/veterinario/crear_cita/crear_cita.dart';
 import 'package:vet_smart_ids/presentation/veterinario/editar_expediente/editar_expediente.dart';
 import 'package:vet_smart_ids/presentation/veterinario/ficha_paciente_veterinario/ficha_paciente_veterinario.dart';
 import 'package:vet_smart_ids/presentation/veterinario/lista_pacientes/lista_pacientes.dart';
 import 'package:vet_smart_ids/presentation/veterinario/menu_veterinario/menu_veterinario.dart';
-import 'package:vet_smart_ids/presentation/veterinario/perfil_veterinarios/perfil_veterinario.dart';
+import 'package:vet_smart_ids/models/cita.dart';
 
 // Archivo de rutas
 
@@ -154,6 +156,17 @@ final appRouter = GoRouter(
             state,
           ) {
             return PerfilMascotaScreen();
+          },
+    ),
+    GoRoute(
+      path: '/expediente_mascota',
+      name: ExpedienteMascotaScreen.name,
+      builder:
+          (
+            context,
+            state,
+          ) {
+            return const ExpedienteMascotaScreen();
           },
     ),
 
@@ -316,7 +329,17 @@ final appRouter = GoRouter(
             context,
             state,
           ) {
-            return const GestureUser();
+            final cita =
+                state.extra
+                    as Cita?;
+            if (cita ==
+                null) {
+              // Si no hay cita, redirigir a error o a home
+              return const ErrorWidget();
+            }
+            return GestureUser(
+              cita: cita,
+            );
           },
     ),
     GoRoute(

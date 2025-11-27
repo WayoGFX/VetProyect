@@ -29,11 +29,6 @@ class UserNavbar
       route: '/mis_mascotas',
     ),
     _NavItem(
-      icon: Icons.medical_services,
-      label: 'Historial',
-      route: '/ficha_paciente',
-    ),
-    _NavItem(
       icon: Icons.calendar_month,
       label: 'Citas',
       route: '/agenda_citas',
@@ -93,7 +88,8 @@ class UserNavbar
             return GestureDetector(
               onTap: () {
                 // Navega a la ruta usando GoRouter con push para mantener el stack
-                if (item.route != currentRoute) {
+                if (item.route !=
+                    currentRoute) {
                   context.push(
                     item.route,
                   );

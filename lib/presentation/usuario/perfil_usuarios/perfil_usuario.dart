@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:vet_smart_ids/core/app_colors.dart';
+import 'package:provider/provider.dart';
+import 'package:vet_smart_ids/providers/usuario_provider.dart';
 import 'package:vet_smart_ids/presentation/usuario/navbar/navbar_usuario.dart';
 
 // Pantalla principal para editar el perfil del usuario.
@@ -31,28 +33,60 @@ class _PerfilUsuarioScreenState
   late final TextEditingController _phoneController;
   late final TextEditingController _emailController;
   late final TextEditingController _addressController;
+  UsuarioProvider? _usuarioProvider;
+  VoidCallback? _usuarioListener;
 
-  // Inicializa los controladores con datos mock
+  // Inicializa los controladores vacíos; se rellenarán desde el provider
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(
-      text: 'Ana García',
-    );
-    _phoneController = TextEditingController(
-      text: '+34 612 345 678',
-    );
-    _emailController = TextEditingController(
-      text: 'ana.garcia@email.com',
-    );
-    _addressController = TextEditingController(
-      text: 'Calle de la Alegría, 123, Madrid',
-    );
+    _nameController = TextEditingController();
+    _phoneController = TextEditingController();
+    _emailController = TextEditingController();
+    _addressController = TextEditingController();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final provider = Provider.of<UsuarioProvider>(context);
+    // Si cambiamos de provider o aún no estamos escuchando, suscribimos
+    if (_usuarioProvider != provider) {
+      // eliminar listener anterior
+      if (_usuarioProvider != null && _usuarioListener != null) {
+        _usuarioProvider!.removeListener(_usuarioListener!);
+      }
+      _usuarioProvider = provider;
+      _usuarioListener = () {
+        final u = _usuarioProvider!.usuarioActual;
+        if (u != null) {
+          _nameController.text = u.nombreCompleto;
+          _phoneController.text = u.telefono;
+          _emailController.text = u.email;
+          _addressController.text = u.direccion;
+        }
+      };
+      _usuarioProvider!.addListener(_usuarioListener!);
+
+      // Rellenar inmediatamente si ya hay usuario
+      final u = _usuarioProvider!.usuarioActual;
+      if (u != null) {
+        _nameController.text = u.nombreCompleto;
+        _phoneController.text = u.telefono;
+        _emailController.text = u.email;
+        _addressController.text = u.direccion;
+      }
+    }
   }
 
   // Elimina los controladores para liberar memoria cuando el widget se destruye
   @override
   void dispose() {
+    // eliminar listener si existe
+    if (_usuarioProvider != null && _usuarioListener != null) {
+      _usuarioProvider!.removeListener(_usuarioListener!);
+    }
     _nameController.dispose();
     _phoneController.dispose();
     _emailController.dispose();

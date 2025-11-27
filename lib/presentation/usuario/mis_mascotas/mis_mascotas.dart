@@ -1,51 +1,15 @@
-// mis_mascotas.dart
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:vet_smart_ids/core/app_colors.dart';
+import 'package:vet_smart_ids/models/mascota.dart';
 import 'package:vet_smart_ids/presentation/usuario/navbar/navbar_usuario.dart';
+import 'package:vet_smart_ids/providers/mascota_provider.dart';
+import 'package:vet_smart_ids/providers/usuario_provider.dart';
 
-// Modelo de datos para una mascota
-class Pet {
-  final String name;
-  final String species;
-  final String imageUrl;
-
-  // Constructor constante
-  const Pet({
-    required this.name,
-    required this.species,
-    required this.imageUrl,
-  });
-}
-
-// Lista de datos de mascotas de ejemplo (mock data)
-const List<
-  Pet
->
-userPets = [
-  Pet(
-    name: 'Max',
-    species: 'Perro',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDMtF4PPptbOJ1sNbi34MACT0NDviPxYFfxbHTBqUBmyiwgjQ4lb_1rbX7dYit3P_2vZFDrt45DqhrhkenLEnGL_9NBgsdV6YZP3tffsX0kAAqFrRlEjY49L0q0BNPOp_ERVnaTcF3H-0xsOWwF6XV-ZFFA3_DNBpL6NPmTLue67fKCSQKzfnI3W_2uKv_cPac1efKhpl4v1BVoqpHGohKgqmyDMh67XdznKqe3ltu7kUt-CSV-YFq5a-H5RgfdHgsl2-a9NBTosH0',
-  ),
-  Pet(
-    name: 'Mimi',
-    species: 'Gato',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBgi7XM0rYfLr26rmQo-tdgLWoLRiIiGmbePpkF7acLCGMcn6k8hgtMNvN9D9eIjN2VJ_4OW8bziXbevetcptjuN69tZ7uEo5qDm_v3QJZAmFihuzC0dbyQOrdtu81ICrIcOswv-ugQTFsemPMLA5SyH72L_Q5RZj8eaQ2O-LCnRB6f9oh7HlrTUOblDidtm-cxWhhNUXlP25MrgYY4VAkMy7fl3HRcqomNo8Nnxi2UqVBiS_U8lMuCmfU65RT11_aKlDoPzMBcDT0',
-  ),
-  Pet(
-    name: 'Buddy',
-    species: 'Perro',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD1UeslQHKKEV7wozgVzgCIHExJPoi5ljygZtcrbaxBIu3ZenzZyE_LtnwbYSkj25vxJWkwOsUWjTggkEkA-JtWH_6CRHgWorgJxPMoSZCkHYhDGhWYXUXbpk3uVpFIqAMT6WXaPDBinB-NX7UHBstRhLRKFWcUvhN1tlBR2_gc2I8yJYRSVpC_1TxgcJPi6moIGx4uV6Lx0la91rN9kgbjC9M9JsFhXBBjxZWTk4jtCZdBYC7SPd7UCTR6ju4-56VlrIBYnFHXLuQ',
-  ),
-];
-
-// Pantalla principal que muestra la lista de mascotas
-class MisMascotasScreen
-    extends
-        StatefulWidget {
-  // Nombre de la ruta estática
+/// Pantalla principal que muestra la lista de mascotas del usuario logueado
+class MisMascotasScreen extends StatefulWidget {
+  /// Nombre de la ruta estática
   static const String name = 'mis_mascotas_screen';
 
   const MisMascotasScreen({
@@ -53,130 +17,224 @@ class MisMascotasScreen
   });
 
   @override
-  State<
-    MisMascotasScreen
-  >
-  createState() => _MisMascotasScreenState();
+  State<MisMascotasScreen> createState() => _MisMascotasScreenState();
 }
 
-class _MisMascotasScreenState
-    extends
-        State<
-          MisMascotasScreen
-        > {
+class _MisMascotasScreenState extends State<MisMascotasScreen> {
   @override
-  Widget build(
-    BuildContext context,
-  ) {
+  void initState() {
+    super.initState();
+    // Cargar las mascotas del usuario después de que se construya el widget
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final usuarioProvider = context.read<UsuarioProvider>();
+      if (usuarioProvider.isLoggedIn && usuarioProvider.usuarioActual != null) {
+        final usuarioId = usuarioProvider.usuarioActual!.usuarioId;
+        if (usuarioId != null) {
+          context.read<MascotaProvider>().loadMascotasWithDetailsForUsuario(usuarioId);
+        }
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new,
-          ),
+          icon: const Icon(Icons.arrow_back_ios_new),
           onPressed: () => context.pop(),
         ),
-        title: const Text(
-          'Mis mascotas',
-        ),
+        title: const Text('Mis mascotas'),
         centerTitle: true,
       ),
-      // Muestra la lista de tarjetas de mascotas de forma eficiente
-      body: ListView.builder(
-        padding: const EdgeInsets.all(
-          16.0,
-        ),
-        itemCount: userPets.length, // Total de elementos a construir
-        itemBuilder:
-            (
-              context,
-              index,
-            ) {
-              final pet = userPets[index]; // Obtiene la mascota actual
-              return _PetCard(
-                pet: pet,
-              ); // Retorna el widget de la tarjeta
-            },
-      ),
+      // Muestra la lista de tarjetas de mascotas usando Provider
+      body: Consumer2<UsuarioProvider, MascotaProvider>(
+        builder: (context, usuarioProvider, mascotaProvider, child) {
+          // Verificar si el usuario está logueado
+          if (!usuarioProvider.isLoggedIn) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.person_off_outlined,
+                    size: 64,
+                    color: AppColors.slate400Light,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Por favor inicia sesión',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ],
+              ),
+            );
+          }
 
-      // navbar
+          // Mostrar indicador de carga
+          if (mascotaProvider.isLoading) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+
+          // Mostrar error si ocurre
+          if (mascotaProvider.errorMessage != null) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Colors.red.shade300,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Error al cargar mascotas',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    mascotaProvider.errorMessage!,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      final usuarioId = usuarioProvider.usuarioActual?.usuarioId;
+                      if (usuarioId != null) {
+                        mascotaProvider.loadMascotasWithDetailsForUsuario(usuarioId);
+                      }
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Reintentar'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          final mascotas = mascotaProvider.mascotas;
+
+          // Mostrar mensaje si no hay mascotas
+          if (mascotas.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.pets_outlined,
+                    size: 64,
+                    color: AppColors.slate400Light,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No tienes mascotas registradas',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Crea una nueva mascota para comenzar',
+                    style: TextStyle(color: AppColors.slate500Light),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          // Mostrar lista de mascotas
+          return RefreshIndicator(
+            onRefresh: () {
+              final usuarioId = usuarioProvider.usuarioActual?.usuarioId;
+              if (usuarioId != null) {
+                return mascotaProvider.loadMascotasWithDetailsForUsuario(usuarioId);
+              }
+              return Future.value();
+            },
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16.0),
+              itemCount: mascotas.length,
+              itemBuilder: (context, index) {
+                final mascota = mascotas[index];
+                return _MascotaCard(mascota: mascota);
+              },
+            ),
+          );
+        },
+      ),
+      // Navbar
       bottomNavigationBar: const UserNavbar(
-        // Le pasamos la ruta estática para que el navbar resalte el ícono "Inicio".
         currentRoute: '/mis_mascotas',
       ),
     );
   }
 }
 
-// Widget reutilizable para la tarjeta de una mascota
-class _PetCard
-    extends
-        StatelessWidget {
-  final Pet pet; // Datos de la mascota
+/// Widget reutilizable para la tarjeta de una mascota
+class _MascotaCard extends StatelessWidget {
+  final Mascota mascota;
 
-  const _PetCard({
-    required this.pet,
+  const _MascotaCard({
+    required this.mascota,
   });
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
-    // Agrega espacio vertical después de la tarjeta
+  Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(
-        bottom: 24.0,
-      ),
+      padding: const EdgeInsets.only(bottom: 24.0),
       child: Card(
         elevation: 4,
-        shadowColor: AppColors.black.withOpacity(
-          0.1,
-        ),
+        shadowColor: AppColors.black.withOpacity(0.1),
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(
-            16.0,
-          ),
+          borderRadius: BorderRadius.circular(16.0),
         ),
         child: InkWell(
           onTap: () {
-            context.push(
-              '/perfil_mascota',
-            );
+            // Seleccionar la mascota y navegar al perfil
+            context.read<MascotaProvider>().selectMascota(mascota);
+            context.push('/perfil_mascota');
           },
-          // Permite apilar la imagen, el degradado y el texto
           child: Stack(
             children: [
-              // Asegura que la imagen sea cuadrada
+              // Imagen de la mascota
               AspectRatio(
-                aspectRatio:
-                    1 /
-                    1,
-                // Carga la imagen desde la red
-                child: Image.network(
-                  pet.imageUrl,
-                  fit: BoxFit.cover,
-                  // Muestra un indicador de carga
-                  loadingBuilder:
-                      (
-                        context,
-                        child,
-                        loadingProgress,
-                      ) {
-                        if (loadingProgress ==
-                            null)
-                          return child;
-                        return const Center(
-                          child: CircularProgressIndicator(),
-                        );
-                      },
-                ),
+                aspectRatio: 1 / 1,
+                child: mascota.fotoUrl != null && mascota.fotoUrl!.isNotEmpty
+                    ? Image.network(
+                        mascota.fotoUrl!,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: AppColors.primary20,
+                            child: Icon(
+                              Icons.pets,
+                              size: 80,
+                              color: AppColors.primary,
+                            ),
+                          );
+                        },
+                      )
+                    : Container(
+                        color: AppColors.primary20,
+                        child: Icon(
+                          Icons.pets,
+                          size: 80,
+                          color: AppColors.primary,
+                        ),
+                      ),
               ),
 
-              // Superpone el degradado oscuro y el texto
+              // Degradado oscuro y texto
               Positioned.fill(
                 child: Container(
-                  // Degradado para mejorar la legibilidad del texto
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
@@ -188,10 +246,7 @@ class _PetCard
                     ),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(
-                      16.0,
-                    ),
-                    // Alinea el contenido en la parte inferior izquierda
+                    padding: const EdgeInsets.all(16.0),
                     child: Align(
                       alignment: Alignment.bottomLeft,
                       child: Column(
@@ -200,25 +255,17 @@ class _PetCard
                         children: [
                           // Nombre de la mascota
                           Text(
-                            pet.name,
-                            style:
-                                Theme.of(
-                                  context,
-                                ).textTheme.titleLarge?.copyWith(
+                            mascota.nombre,
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                   color: AppColors.white,
                                   fontSize: 24,
                                 ),
                           ),
-                          // Especie de la mascota
+                          // Especie y raza
                           Text(
-                            pet.species,
-                            style:
-                                Theme.of(
-                                  context,
-                                ).textTheme.bodyMedium?.copyWith(
-                                  color: AppColors.white.withOpacity(
-                                    0.9,
-                                  ),
+                            '${mascota.especie} • ${mascota.raza}',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: AppColors.white.withOpacity(0.9),
                                 ),
                           ),
                         ],

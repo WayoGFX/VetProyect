@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:vet_smart_ids/models/mascota.dart';
 import 'package:vet_smart_ids/models/paciente_detalle.dart';
+
 import 'package:vet_smart_ids/services/api_service.dart';
 
 class MascotaProvider
@@ -225,6 +226,52 @@ class MascotaProvider
     _mascotaSeleccionada = null;
     _pacienteDetalle = null;
     notifyListeners();
+  }
+
+  /// Cargar mascotas de un usuario con todos sus detalles
+  /// Retorna una lista de mascotas con su información completa
+  Future<
+    List<
+      Mascota
+    >
+  >
+  loadMascotasWithDetailsForUsuario(
+    int usuarioId,
+  ) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      // Cargar todas las mascotas
+      final todasMascotas = await _apiService.getMascotas();
+
+      // Filtrar mascotas del usuario
+      final mascotasUsuario = todasMascotas
+          .where(
+            (
+              m,
+            ) =>
+                m.usuarioId ==
+                usuarioId,
+          )
+          .toList();
+
+      _mascotas = mascotasUsuario;
+      _isLoading = false;
+      notifyListeners();
+      return mascotasUsuario;
+    } catch (
+      e
+    ) {
+      _errorMessage = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      print(
+        'Error al cargar mascotas del usuario con detalles: $e',
+      );
+      return [];
+    }
   }
 
   /// Cargar información completa del paciente (para ficha médica)

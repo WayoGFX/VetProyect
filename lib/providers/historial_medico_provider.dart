@@ -52,6 +52,26 @@ class HistorialMedicoProvider extends ChangeNotifier {
     }
   }
 
+  /// Cargar historiales de múltiples mascotas
+  Future<void> loadHistorialesByMascotas(List<int> mascotaIds) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final todosHistoriales = await _apiService.getHistorialesMedicos();
+      _historiales = todosHistoriales
+          .where((h) => mascotaIds.contains(h.mascotaId))
+          .toList();
+    } catch (e) {
+      _errorMessage = e.toString();
+      print('Error al cargar historiales de las mascotas: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   /// Cargar un historial por ID
   Future<void> loadHistorialById(int id) async {
     _isLoading = true;

@@ -1,7 +1,12 @@
 // lib/screens/patient_profile_screen.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:vet_smart_ids/core/app_colors.dart';
+import 'package:vet_smart_ids/models/historial_medico.dart';
+import 'package:vet_smart_ids/providers/usuario_provider.dart';
+import 'package:vet_smart_ids/providers/mascota_provider.dart';
+import 'package:vet_smart_ids/providers/historial_medico_provider.dart';
 
 // Importa los modelos de datos (Paciente, Vacuna, Alergia, Cita)
 import 'package:vet_smart_ids/presentation/usuario/ficha_paciente/ficha_paciente_model.dart';
@@ -9,131 +14,231 @@ import 'package:vet_smart_ids/presentation/usuario/navbar/navbar_usuario.dart';
 
 class PatientProfileScreen
     extends
-        StatelessWidget {
+        StatefulWidget {
   static const String name = 'PatientProfileScreen';
-  final Paciente patient; // Objeto del paciente recibido como final porque espera datos
+  final Paciente? patient; // Opcional ahora — si viene, usar mock; si no, cargar real
 
   const PatientProfileScreen({
     super.key,
-    required this.patient,
+    this.patient,
   });
+
+  @override
+  State<PatientProfileScreen> createState() => _PatientProfileScreenState();
+}
+
+class _PatientProfileScreenState extends State<PatientProfileScreen> {
+  bool _initialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      _initialized = true;
+      _loadData();
+    }
+  }
+
+  Future<void> _loadData() async {
+    final usuarioProvider = context.read<UsuarioProvider>();
+    final mascotaProvider = context.read<MascotaProvider>();
+    final histProvider = context.read<HistorialMedicoProvider>();
+
+    if (usuarioProvider.isLoggedIn && usuarioProvider.usuarioActual != null) {
+      final uid = usuarioProvider.usuarioActual!.usuarioId;
+      if (uid != null) {
+        // Cargar mascotas del usuario
+        final mascotas = await mascotaProvider.loadMascotasWithDetailsForUsuario(uid);
+
+        // Si tiene mascotas, cargar historiales para esas mascotas
+        if (mascotas.isNotEmpty) {
+          final mascotaIds = mascotas.where((m) => m.mascotaId != null).map((m) => m.mascotaId!).toList();
+          await histProvider.loadHistorialesByMascotas(mascotaIds);
+        } else {
+          await histProvider.loadHistorialesByMascotas([]);
+        }
+      }
+    }
+  }
 
   @override
   Widget build(
     BuildContext context,
   ) {
+    final usuarioProvider = context.watch<UsuarioProvider>();
+    final mascotaProvider = context.watch<MascotaProvider>();
+    final histProvider = context.watch<HistorialMedicoProvider>();
+
+    // Fallback a mock si se pasa patient (compatible con ruta antigua)
+    if (widget.patient != null) {
+      return _buildMockUI(context);
+    }
+
+    if (!usuarioProvider.isLoggedIn) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Historial Médico')),
+        body: const Center(child: Text('Inicia sesión para ver el historial')),
+      );
+    }
+
+    if (histProvider.isLoading || mascotaProvider.isLoading) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Historial Médico')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final mascotas = mascotaProvider.mascotas;
+    final uid = usuarioProvider.usuarioActual!.usuarioId;
+    final userHistoriales = histProvider.historiales.where((h) => h.usuarioId == uid).toList();
+
+    // Agrupar historiales por mascotaId
+    final Map<int, List<HistorialMedico>> grouped = {};
+    for (var h in userHistoriales) {
+      grouped.putIfAbsent(h.mascotaId, () => []).add(h);
+    }
+
     return Scaffold(
-      // Appbar
       appBar: AppBar(
-        backgroundColor:
-            Theme.of(
-              context,
-            ).scaffoldBackgroundColor.withOpacity(
-              0.8,
-            ),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.8),
         elevation: 0,
         toolbarHeight: 56,
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new,
-            size: 24,
-          ),
+          icon: const Icon(Icons.arrow_back_ios_new, size: 24),
           onPressed: () => context.pop(),
           color: AppColors.textLight,
         ),
-        // Título de la pantalla
         title: Text(
-          'Ficha del Paciente',
-          style:
-              Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(
+          'Historial Médico',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textLight,
               ),
         ),
         centerTitle: true,
-        actions: const [
-          SizedBox(
-            width: 48,
-          ),
-        ],
+        actions: const [SizedBox(width: 48)],
       ),
-
-      // Contenido principal
       body: SingleChildScrollView(
-        // Padding inferior
-        padding: const EdgeInsets.only(
-          bottom: 120,
-        ),
+        padding: const EdgeInsets.only(bottom: 120),
         child: Padding(
-          padding: const EdgeInsets.all(
-            16.0,
-          ),
+          padding: const EdgeInsets.all(16.0),
+          child: grouped.isEmpty
+              ? Center(
+                  child: Text(
+                    'No hay historiales médicos para tus mascotas.',
+                    style: TextStyle(color: isDark ? AppColors.white : AppColors.textLight),
+                  ),
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: grouped.entries.map((entry) {
+                    final mascotaId = entry.key;
+                    final historiales = entry.value;
+
+                    final lista = mascotas.where((m) => (m.mascotaId ?? -1) == mascotaId).toList();
+                    final mascota = lista.isNotEmpty ? lista.first : null;
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Cabecera con foto y nombre de mascota
+                        Row(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(28),
+                              child: mascota != null && mascota.fotoUrl != null && mascota.fotoUrl!.isNotEmpty
+                                  ? Image.network(
+                                      mascota.fotoUrl!,
+                                      width: 56,
+                                      height: 56,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (c, e, st) {
+                                        return Container(
+                                          width: 56,
+                                          height: 56,
+                                          color: AppColors.primary20,
+                                          child: const Icon(Icons.pets, color: AppColors.primary),
+                                        );
+                                      },
+                                    )
+                                  : Container(
+                                      width: 56,
+                                      height: 56,
+                                      color: AppColors.primary20,
+                                      child: const Icon(Icons.pets, color: AppColors.primary),
+                                    ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                mascota != null ? mascota.nombre : 'Mascota #$mascotaId',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? AppColors.white : AppColors.textLight,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        // Lista de historiales de esta mascota
+                        ...historiales.map((h) => _HistorialCard(hist: h, isDark: isDark)),
+                        const SizedBox(height: 24),
+                      ],
+                    );
+                  }).toList(),
+                ),
+        ),
+      ),
+      bottomNavigationBar: const UserNavbar(currentRoute: '/ficha_paciente'),
+    );
+  }
+
+  /// Mantener UI mock para compatibilidad
+  Widget _buildMockUI(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.8),
+        elevation: 0,
+        toolbarHeight: 56,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, size: 24),
+          onPressed: () => context.pop(),
+          color: AppColors.textLight,
+        ),
+        title: Text(
+          'Ficha del Paciente',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textLight,
+              ),
+        ),
+        centerTitle: true,
+        actions: const [SizedBox(width: 48)],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.only(bottom: 120),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Información general del paciente foto, nombre, raza
-              _PatientInfoSection(
-                patient: patient,
-              ),
-
-              const SizedBox(
-                height: 24,
-              ),
-              // Secciones de historial, en columna
+              _PatientInfoSection(patient: widget.patient!),
+              const SizedBox(height: 24),
               Column(
                 children: [
-                  // Tarjeta de Vacunas
-                  _InfoCard(
-                    title: 'Vacunas',
-                    child: _VaccineList(
-                      vacunas: patient.vacunas,
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height: 24,
-                  ),
-
-                  // Tarjeta de Alergias
-                  _InfoCard(
-                    title: 'Alergias',
-                    child: _AllergyList(
-                      alergias: patient.alergias,
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height: 24,
-                  ),
-
-                  // Tarjeta de Próximas Citas
-                  _InfoCard(
-                    title: 'Próximas Citas',
-                    child: _AppointmentList(
-                      citas: patient.proximasCitas,
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height: 24,
-                  ),
-
-                  // Tarjeta de Citas Anteriores
-                  _InfoCard(
-                    title: 'Citas Anteriores',
-                    child: _AppointmentList(
-                      citas: patient.citasAnteriores,
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height: 24,
-                  ),
-
-                  // Botón para descargar el PDF del historial
+                  _InfoCard(title: 'Vacunas', child: _VaccineList(vacunas: widget.patient!.vacunas)),
+                  const SizedBox(height: 24),
+                  _InfoCard(title: 'Alergias', child: _AllergyList(alergias: widget.patient!.alergias)),
+                  const SizedBox(height: 24),
+                  _InfoCard(title: 'Próximas Citas', child: _AppointmentList(citas: widget.patient!.proximasCitas)),
+                  const SizedBox(height: 24),
+                  _InfoCard(title: 'Citas Anteriores', child: _AppointmentList(citas: widget.patient!.citasAnteriores)),
+                  const SizedBox(height: 24),
                   _DownloadPdfButton(),
                 ],
               ),
@@ -141,12 +246,7 @@ class PatientProfileScreen
           ),
         ),
       ),
-
-      // navbar
-      bottomNavigationBar: const UserNavbar(
-        // Le pasamos la ruta estática para que el navbar resalte el ícono "Inicio".
-        currentRoute: '/ficha_paciente',
-      ),
+      bottomNavigationBar: const UserNavbar(currentRoute: '/ficha_paciente'),
     );
   }
 }
@@ -483,6 +583,7 @@ class _AppointmentItem
       onTap: () {
         context.push(
           '/cita_detalles_usuario', // Navega a la ruta de detalle de cita
+          extra: cita,
         );
       },
       borderRadius: BorderRadius.circular(
@@ -604,5 +705,109 @@ class _DownloadPdfButton
         ),
       ),
     );
+  }
+}
+
+/// Widget para mostrar una tarjeta de historial médico
+class _HistorialCard extends StatelessWidget {
+  final HistorialMedico hist;
+  final bool isDark;
+
+  const _HistorialCard({
+    required this.hist,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Fecha
+            Text(
+              _formatDate(hist.fechaConsulta),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: isDark ? AppColors.white : AppColors.textLight,
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Diagnóstico
+            RichText(
+              text: TextSpan(
+                children: [
+                  TextSpan(
+                    text: 'Diagnóstico: ',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? AppColors.slate600Light : AppColors.slate600Light,
+                    ),
+                  ),
+                  TextSpan(
+                    text: hist.diagnostico,
+                    style: TextStyle(
+                      color: isDark ? AppColors.slate600Light.withOpacity(0.8) : AppColors.slate600Light,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 6),
+            // Tratamiento
+            RichText(
+              text: TextSpan(
+                children: [
+                  TextSpan(
+                    text: 'Tratamiento: ',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? AppColors.slate600Light : AppColors.slate600Light,
+                    ),
+                  ),
+                  TextSpan(
+                    text: hist.tratamiento,
+                    style: TextStyle(
+                      color: isDark ? AppColors.slate600Light.withOpacity(0.8) : AppColors.slate600Light,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (hist.notasAdicionales != null && hist.notasAdicionales!.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              RichText(
+                text: TextSpan(
+                  children: [
+                    TextSpan(
+                      text: 'Notas: ',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? AppColors.slate600Light : AppColors.slate600Light,
+                      ),
+                    ),
+                    TextSpan(
+                      text: hist.notasAdicionales,
+                      style: TextStyle(
+                        color: isDark ? AppColors.slate600Light.withOpacity(0.8) : AppColors.slate600Light,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 }

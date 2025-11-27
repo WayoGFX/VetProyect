@@ -21,10 +21,10 @@ class UserMainMenuScreen
   >
   menuItems = const [
     MenuItemData(
-      title: 'Historial Médico',
-      subtitle: 'Accede al historial médico de tu mascota',
-      icon: Icons.medical_services,
-      route: '/ficha_paciente',
+      title: 'Perfil de la Mascota',
+      subtitle: 'Administra el perfil de tu mascota',
+      icon: Icons.pets,
+      route: '/mis_mascotas',
     ),
     MenuItemData(
       title: 'Chat con la Clínica',
@@ -43,18 +43,6 @@ class UserMainMenuScreen
       subtitle: 'Administra tu perfil',
       icon: Icons.person,
       route: '/perfil_usuarios',
-    ),
-    MenuItemData(
-      title: 'Perfil de la Mascota',
-      subtitle: 'Administra el perfil de tu mascota',
-      icon: Icons.pets,
-      route: '/mis_mascotas',
-    ),
-    MenuItemData(
-      title: 'ERROR',
-      subtitle: 'Esto es para demostrar que sirven los manejos de errores',
-      icon: Icons.error,
-      route: '/ruta_no_creada',
     ),
   ];
 
